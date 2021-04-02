@@ -1,0 +1,30 @@
+{
+  "name": "p2p-exchange",
+  "version": "1.0.0",
+  "description": "Smart contracts for the Seeds p2p exchange application",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IanMendozaJaimes/p2p-exchange.git"
+  },
+  "scripts": {
+    "initAll": "node scripts/commands.js init",
+    "initContract": "node scripts/commands.js run $1",
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IanMendozaJaimes/p2p-exchange/issues"
+  },
+  "homepage": "https://github.com/IanMendozaJaimes/p2p-exchange#readme",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "eosjs": "^21.0.3",
+    "node-fetch": "^2.6.1",
+    "promisify": "^0.0.3"
+  },
+  "devDependencies": {
+    "mocha": "^8.3.2"
+  }
+}
