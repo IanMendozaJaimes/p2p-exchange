@@ -17,7 +17,7 @@ describe('Settings', function () {
   })
 
   it('Set a new param', async function () {
-    await contracts.settings.setparam('testparam', ['uint64', 20], { authorization: `${settings}@active` })
+    await contracts.settings.setparam('testparam', ['uint64', 20], 'test param', { authorization: `${settings}@active` })
   })
 
 })

@@ -1,3 +1,3 @@
 #include <nullcontract.hpp>
 
-ACTION nullcontract::nonce () {}
+ACTION nullcontract::nonce (string random) {}

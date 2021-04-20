@@ -10,6 +10,7 @@
   "scripts": {
     "initAll": "node scripts/commands.js init",
     "initContract": "node scripts/commands.js run $1",
+    "setParams": "node scripts/commands.js set params",
     "test": "mocha"
   },
   "author": "",
@@ -22,7 +23,8 @@
     "dotenv": "^8.2.0",
     "eosjs": "^21.0.3",
     "node-fetch": "^2.6.1",
-    "promisify": "^0.0.3"
+    "promisify": "^0.0.3",
+    "prompt-sync": "^4.2.0"
   },
   "devDependencies": {
     "mocha": "^8.3.2"

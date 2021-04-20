@@ -2,6 +2,7 @@ const { api } = require('./eos')
 const { Serialize } = require('eosjs')
 const fs = require('fs')
 const { join } = require('path')
+const { isLocalNode } = require('./config')
 
 async function getWasmAbi (contractName) {
   const codePath = join(__dirname, `../compiled/${contractName}.wasm`)
@@ -93,47 +94,77 @@ async function setAbi ({ account, abi }, { authorization }) {
 
 async function createAccount ({ account, publicKey, stakes, creator }) {
 
-  await api.transact({
-    actions: [
-      {
-        account: 'eosio',
-        name: 'newaccount',
-        authorization: [{
-          actor: creator,
-          permission: 'active',
-        }],
-        data: {
-          creator,
-          name: account,
-          owner: {
-            threshold: 1,
-            keys: [{
-              key: publicKey,
-              weight: 1
-            }],
-            accounts: [],
-            waits: []
-          },
-          active: {
-            threshold: 1,
-            keys: [{
-              key: publicKey,
-              weight: 1
-            }],
-            accounts: [],
-            waits: []
-          },
-        }
-      }
-    ]
-  }, {
-    blocksBehind: 3,
-    expireSeconds: 30
-  })
-
-  try {
+  if (isLocalNode()) {
     await api.transact({
       actions: [
+        {
+          account: 'eosio',
+          name: 'newaccount',
+          authorization: [{
+            actor: creator,
+            permission: 'active',
+          }],
+          data: {
+            creator,
+            name: account,
+            owner: {
+              threshold: 1,
+              keys: [{
+                key: publicKey,
+                weight: 1
+              }],
+              accounts: [],
+              waits: []
+            },
+            active: {
+              threshold: 1,
+              keys: [{
+                key: publicKey,
+                weight: 1
+              }],
+              accounts: [],
+              waits: []
+            },
+          }
+        }
+      ]
+    }, {
+      blocksBehind: 3,
+      expireSeconds: 30
+    })  
+  } else {
+    await api.transact({
+      actions: [
+        {
+          account: 'eosio',
+          name: 'newaccount',
+          authorization: [{
+            actor: creator,
+            permission: 'active',
+          }],
+          data: {
+            creator,
+            name: account,
+            owner: {
+              threshold: 1,
+              keys: [{
+                key: publicKey,
+                weight: 1
+              }],
+              accounts: [],
+              waits: []
+            },
+            active: {
+              threshold: 1,
+              keys: [{
+                key: publicKey,
+                weight: 1
+              }],
+              accounts: [],
+              waits: []
+            },
+          }
+        },
         {
           account: 'eosio',
           name: 'buyrambytes',
@@ -166,9 +197,7 @@ async function createAccount ({ account, publicKey, stakes, creator }) {
     }, {
       blocksBehind: 3,
       expireSeconds: 30
-    })
-  } catch (err) {
-    console.log(err.json || err.message || err)
+    })  
   }
 
 }

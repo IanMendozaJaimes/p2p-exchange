@@ -12,7 +12,7 @@ function getNonce () {
           permission: 'active'
         }
       ],
-      data: {}
+      data: { random: Math.random().toString().substring(0, 8) }
     }]
   }
   return []
@@ -44,7 +44,7 @@ async function initContract (account) {
         }
       } else {
         if ((action.fields.length + 1) != arguments.length) {
-          throw new Exception(`Not enough arguments to call ${action.name} action in ${accountName} contract`)
+          throw new Error(`Not enough arguments to call ${action.name} action in ${account} contract`)
         }
         for (let i = 0; i < action.fields.length; i++) {
           const { name } = action.fields[i]

@@ -6,9 +6,9 @@ const contract = (name, nameOnChain) => {
     nameOnChain,
     type: 'contract',
     stakes: {
-      cpu: '1.0000 TLOS',
-      net: '1.0000 TLOS',
-      ram: 10000
+      cpu: '20.0000 TLOS',
+      net: '20.0000 TLOS',
+      ram: 1000000
     }
   }
 }
@@ -21,7 +21,7 @@ const supportedChains = {
 
 const ownerByChain = {
   [supportedChains.local]: 'eosio',
-  [supportedChains.telosTestnet]: '',
+  [supportedChains.telosTestnet]: 'm1ownerp2pex',
   [supportedChains.telosMainnet]: ''
 }
 
@@ -31,7 +31,8 @@ const ownerPublicKeysByChain = {
     active: 'EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV'
   },
   [supportedChains.telosTestnet]: {
-
+    owner: 'EOS6PtkWLquhJYFxjU8mWTtg8eZWWjp39FQ2m3Xrceun9V8Z6fZNQ',
+    active: 'EOS6PtkWLquhJYFxjU8mWTtg8eZWWjp39FQ2m3Xrceun9V8Z6fZNQ'
   },
   [supportedChains.telosMainnet]: {
 
@@ -44,7 +45,8 @@ const publicKeysByChain = {
     active: 'EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV'
   },
   [supportedChains.telosTestnet]: {
-
+    owner: 'EOS6PtkWLquhJYFxjU8mWTtg8eZWWjp39FQ2m3Xrceun9V8Z6fZNQ',
+    active: 'EOS6PtkWLquhJYFxjU8mWTtg8eZWWjp39FQ2m3Xrceun9V8Z6fZNQ'
   },
   [supportedChains.telosMainnet]: {
 
@@ -53,11 +55,13 @@ const publicKeysByChain = {
 
 const contractsConfig = {
   [supportedChains.local]: [
-    contract('settings', 'm1sttgsp2p'),
-    contract('nullcontract', 'm1nullp2p')
+    contract('settings', 'm1sttgsp2pex'),
+    contract('nullcontract', 'm1nullp2p'),
+    contract('escrow', 'm1escrowp2px')
   ],
   [supportedChains.telosTestnet]: [
-
+    contract('settings', 'm1sttgsp2pex'),
+    contract('escrow', 'm1escrowp2px')
   ],
   [supportedChains.telosMainnet]: [
 
@@ -88,5 +92,5 @@ function sleep(ms) {
 }
 
 module.exports = {
-  contracts, contractNames, nameOnChainToName, owner, ownerPublicKeys, publicKeys, isLocalNode, sleep
+  contracts, contractNames, nameOnChainToName, owner, ownerPublicKeys, publicKeys, isLocalNode, sleep, chain
 }

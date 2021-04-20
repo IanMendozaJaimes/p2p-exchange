@@ -18,7 +18,7 @@ const getChainInfo = () => {
     case 'telosTestnet':
       return {
         keyProvider: [process.env.TESTNET_PRIVATE_KEY],
-        httpEndpoint: 'https://testnet.telos.caleos.io/v2'
+        httpEndpoint: 'https://testnet.telos.caleos.io'
       }
     case 'telosMainnet':
       return {
@@ -36,15 +36,12 @@ const signatureProvider = new JsSignatureProvider(Array.isArray(keyProvider) ? k
 const rpc = new JsonRpc(httpEndpoint, { fetch });
 const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
 
-async function transact (transaction, { blocksBehind=3, expireSeconds=30 }) {
+async function transact (transaction, options={}) {
+  options = { blocksBehind: 3, expireSeconds: 30, ...options }
   const res = await api.transact(
     transaction,
-    {
-      blocksBehind,
-      expireSeconds
-    }
+    options
   )
   return res
 }
-
 module.exports = { rpc, api, transact }

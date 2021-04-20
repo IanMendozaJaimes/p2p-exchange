@@ -10,9 +10,9 @@ CONTRACT nullcontract : public contract {
     using contract::contract;
     nullcontract(name receiver, name code, datastream<const char*> ds)
       : contract(receiver, code, ds)
-      {}
+        {}
 
-    ACTION nonce();
+    ACTION nonce(string random);
 };
 
 EOSIO_DISPATCH(nullcontract, (nonce));

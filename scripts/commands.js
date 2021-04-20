@@ -1,7 +1,9 @@
-const { contracts, publicKeys, owner, sleep } = require('./config')
+const { contracts, publicKeys, owner, chain, sleep, isLocalNode } = require('./config')
 const { compileContract } = require('./compile')
 const { createAccount, deployContract } = require('./deploy')
 const { accountExists, contractRunningSameCode } = require('./eosio-errors')
+const { setParamsValue } = require('./contract-settings')
+const prompt = require('prompt-sync')()
 
 
 async function manageDeployment (contract) {
@@ -49,6 +51,10 @@ async function init () {
 
   console.log('deployment finished\n\n')
 
+  console.log('SETTING CONTRACTS PARAMETERS')
+  await setParamsValue()
+  console.log('setting parameters finished\n\n')
+
 }
 
 async function run (contractName) {
@@ -72,12 +78,21 @@ async function run (contractName) {
 
 async function main () {
 
+  if (!isLocalNode()) {
+    const option = prompt(`You are about to run a command on ${chain}, are you sure? [y/n] `)
+    if (option.toLowerCase() !== 'y') { return }
+  }
+
   const args = process.argv.slice(2)
 
   if (args[0] === 'init') {
     await init()
   } else if (args[0] == 'run') {
     await run(args[1])
+  } else if (args[0] == 'set') {
+    if (args[1] == 'params') {
+      await setParamsValue()
+    }
   }
 
 }
