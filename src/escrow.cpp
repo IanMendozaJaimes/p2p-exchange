@@ -124,6 +124,15 @@ ACTION escrow::upsertuser(
       item.time_zone = time_zone;
       item.fiat_currency = fiat_currency;
     });
+
+    transactions_stats_tables trx_stats_t(get_self(), get_self().value);
+
+    trx_stats_t.emplace(_self, [&](auto & trxstats){
+      trxstats.account = account;
+      trxstats.total_trx = 0;
+      trxstats.sell_successful = 0;
+      trxstats.buy_successful = 0;
+    });
   }
 }
 
@@ -351,6 +360,7 @@ ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id)
   check(boitr != offers_t.end(), "buy offer not found");
 
   name seller = boitr->seller;
+  name buyer = boitr->buyer;
 
   if(has_auth(seller)) require_auth(seller);
   else require_auth(get_self());
@@ -373,6 +383,9 @@ ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id)
   balances_t.modify(bitr, _self, [&](auto & balance){
     balance.escrow_balance -= quantity;
   });
+
+  add_success_transaction(seller, offer_type_sell);
+  add_success_transaction(buyer, offer_type_buy);
 }
 
 // ACTION escrow::initarbitrge() {}
@@ -385,4 +398,23 @@ void escrow::send_transfer(const name & beneficiary, const asset & quantity, con
     "transfer"_n,
     std::make_tuple(get_self(), beneficiary, quantity, memo)
   ).send();
+}
+
+void escrow::add_success_transaction(const name & account, const name & trx_type)
+{
+  transactions_stats_tables trx_stats_t(get_self(), get_self().value);
+
+  auto titr = trx_stats_t.find(account.value);
+
+  trx_stats_t.modify(titr, _self, [&](auto & trxstats){
+    trxstats.total_trx += 1;
+    if(trx_type == offer_type_sell)
+    {
+      trxstats.sell_successful += 1;
+    }
+    else
+    {
+      trxstats.buy_successful += 1;
+    }
+  });
 }

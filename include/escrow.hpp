@@ -125,49 +125,6 @@ CONTRACT escrow : public contract {
       const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_id>>
     > offer_tables;
 
-    // TABLE sell_offer_table {
-    //   uint64_t id;
-    //   name seller;
-    //   asset total_offered;
-    //   asset available_quantity;
-    //   uint64_t price_percentage;
-    //   time_point created_date;
-    //   name time_zone;
-    //   name fiat_currency;
-    //   mapss payment_methods;
-    //   std::string additional_info;
-    //   // status ?
-
-    //   uint64_t primary_key () const { return id; }
-    //   uint64_t by_seller () const { return seller.value; }
-    //   uint64_t by_price_percentage () const { return price_percentage; }
-    //   uint64_t by_created_date () const { return created_date.sec_since_epoch(); }
-    //   uint64_t by_time_zone () const { return time_zone.value; }
-    //   uint64_t by_fiat_currency () const { return fiat_currency.value; }
-    // };
-
-    // TABLE buy_offer_table {
-    //   uint64_t id;
-    //   name buyer;
-    //   name seller;
-    //   asset quantity;
-    //   uint64_t price_percentage;
-    //   time_point created_date;
-    //   mapnt status_history;
-    //   std::vector<std::string> payment_method;
-    //   name status;
-
-    //   uint64_t primary_key () const { return id; }
-    //   uint64_t by_buyer () const { return buyer.value; }
-    //   uint64_t by_seller () const { return seller.value; }
-    //   uint64_t by_created_date () const { return created_date.sec_since_epoch(); }
-    //   uint64_t by_status () const { return status.value; }
-    //   uint128_t by_buyer_seller () const { return (uint128_t(buyer.value) << 64) + seller.value; }
-    //   uint128_t by_seller_buyer () const { return (uint128_t(seller.value) << 64) + buyer.value; }
-    //   uint128_t by_status_seller () const { return (uint128_t(status.value) << 64) + seller.value; }
-    //   uint128_t by_status_buyer () const { return (uint128_t(status.value) << 64) + buyer.value; }
-    // };
-
     TABLE buy_sell_relation_table {
       uint64_t id;
       uint64_t sell_offer_id;
@@ -189,38 +146,6 @@ CONTRACT escrow : public contract {
       const_mem_fun<transactions_stats_table, uint128_t, &transactions_stats_table::by_buy_account>>
     > transactions_stats_tables;
 
-    // typedef eosio::multi_index<name("selloffers"), sell_offer_table,
-    //   indexed_by<name("byseller"),
-    //   const_mem_fun<sell_offer_table, uint64_t, &sell_offer_table::by_seller>>,
-    //   indexed_by<name("bypriceper"),
-    //   const_mem_fun<sell_offer_table, uint64_t, &sell_offer_table::by_price_percentage>>,
-    //   indexed_by<name("bydate"),
-    //   const_mem_fun<sell_offer_table, uint64_t, &sell_offer_table::by_created_date>>,
-    //   indexed_by<name("bytimezone"),
-    //   const_mem_fun<sell_offer_table, uint64_t, &sell_offer_table::by_time_zone>>,
-    //   indexed_by<name("byfiatcrrncy"),
-    //   const_mem_fun<sell_offer_table, uint64_t, &sell_offer_table::by_fiat_currency>>
-    // > sell_offer_tables;
-
-    // typedef eosio::multi_index<name("buyoffers"), buy_offer_table,
-    //   indexed_by<name("bybuyer"),
-    //   const_mem_fun<buy_offer_table, uint64_t, &buy_offer_table::by_buyer>>,
-    //   indexed_by<name("byseller"),
-    //   const_mem_fun<buy_offer_table, uint64_t, &buy_offer_table::by_seller>>,
-    //   indexed_by<name("bydate"),
-    //   const_mem_fun<buy_offer_table, uint64_t, &buy_offer_table::by_created_date>>,
-    //   indexed_by<name("bystatus"),
-    //   const_mem_fun<buy_offer_table, uint64_t, &buy_offer_table::by_seller>>,
-    //   indexed_by<name("bybuyrsellr"),
-    //   const_mem_fun<buy_offer_table, uint128_t, &buy_offer_table::by_buyer_seller>>,
-    //   indexed_by<name("bysellrbuyr"),
-    //   const_mem_fun<buy_offer_table, uint128_t, &buy_offer_table::by_seller_buyer>>,
-    //   indexed_by<name("bystatussllr"),
-    //   const_mem_fun<buy_offer_table, uint128_t, &buy_offer_table::by_status_seller>>,
-    //   indexed_by<name("bystatusbuyr"),
-    //   const_mem_fun<buy_offer_table, uint128_t, &buy_offer_table::by_status_buyer>>
-    // > buy_offer_tables;
-
     typedef eosio::multi_index<name("buysellrel"), buy_sell_relation_table,
       indexed_by<name("bybuy"),
       const_mem_fun<buy_sell_relation_table, uint64_t, &buy_sell_relation_table::by_buy>>,
@@ -232,6 +157,7 @@ CONTRACT escrow : public contract {
     config_tables config;
 
     void send_transfer(const name & beneficiary, const asset & quantity, const std::string & memo);
+    void add_success_transaction(const name & account, const name & trx_type);
 
 };
 
