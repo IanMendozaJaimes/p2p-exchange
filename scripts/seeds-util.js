@@ -1,5 +1,7 @@
 const { initContract } = require('./eosio-util')
 
+const seedsSymbol = 'SEEDS'
+
 const seedsContracts = {
   token: 'token.seeds',
   accounts: 'accts.seeds'
@@ -9,7 +11,7 @@ const seedsAccounts = {
   firstuser: 'seedsuseraaa',
   seconduser: 'seedsuserbbb',
   thirduser: 'seedsuserccc',
-  fourthuser: 'seedsuserddd'
+  fourthuser: 'seedsuseryyy'
 }
 
 const seedsNameOnChainToName = {}
@@ -29,5 +31,5 @@ async function getSeedsContracts (accounts) {
 }
 
 module.exports = {
-  seedsContracts, seedsNameOnChainToName, seedsAccounts, getSeedsContracts
+  seedsSymbol, seedsContracts, seedsNameOnChainToName, seedsAccounts, getSeedsContracts
 }

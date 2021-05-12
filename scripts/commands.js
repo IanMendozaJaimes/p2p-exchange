@@ -3,6 +3,7 @@ const { compileContract } = require('./compile')
 const { createAccount, deployContract } = require('./deploy')
 const { accountExists, contractRunningSameCode } = require('./eosio-errors')
 const { setParamsValue } = require('./contract-settings')
+const { updatePermissions } = require('./permissions')
 const prompt = require('prompt-sync')()
 
 
@@ -51,7 +52,11 @@ async function init () {
 
   console.log('deployment finished\n\n')
 
-  console.log('SETTING CONTRACTS PARAMETERS')
+  console.log('UPDATE PERMISSIONS\n')
+  await updatePermissions()
+  console.log('update permissions finished\n\n')
+
+  console.log('SETTING CONTRACTS PARAMETERS\n')
   await setParamsValue()
   console.log('setting parameters finished\n\n')
 
@@ -92,6 +97,8 @@ async function main () {
   } else if (args[0] == 'set') {
     if (args[1] == 'params') {
       await setParamsValue()
+    } else if (args[1] == 'permissions') {
+      await updatePermissions()
     }
   }
 

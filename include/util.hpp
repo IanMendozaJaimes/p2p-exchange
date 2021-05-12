@@ -45,5 +45,3 @@ namespace util
     }
   }
 }
-
-typedef std::map<string, string> mapss;

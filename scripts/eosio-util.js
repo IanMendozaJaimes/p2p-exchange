@@ -1,4 +1,4 @@
-const { api } = require('./eos')
+const { api, rpc } = require('./eos')
 const { nameOnChainToName, contractNames, isLocalNode } = require('./config')
 
 function getNonce () {
@@ -85,6 +85,11 @@ async function getContracts (accounts) {
   return c
 }
 
+async function getAccountBalance (contract, account, token) {
+  const balance = await rpc.get_currency_balance(contract, account, token)
+  return Number.parseFloat(balance[0]) || 0
+}
+
 module.exports = {
-  getContracts, initContract
+  getContracts, initContract, getAccountBalance
 }

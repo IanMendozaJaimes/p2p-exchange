@@ -2,10 +2,11 @@
 #include <util.hpp>
 
 using eosio::name;
-using std::string;
 
-#define DEFINE_CHECK_USER \
-  void check_user (name account) { \
-    auto uitr = users.find(account.value); \
-    check(uitr != users.end(), "user not found"); \
-  }
+typedef std::map<std::string, std::string> mapss;
+typedef std::map<name, time_point> mapnt;
+typedef std::map<name, uint64_t> mapnui64;
+typedef std::map<name, asset> mapna;
+
+typedef std::vector<std::string> vs;
+

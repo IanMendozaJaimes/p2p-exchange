@@ -11,6 +11,7 @@
     "initAll": "node scripts/commands.js init",
     "initContract": "node scripts/commands.js run $1",
     "setParams": "node scripts/commands.js set params",
+    "setPermissions": "node scripts/commands.js set permissions",
     "test": "mocha"
   },
   "author": "",

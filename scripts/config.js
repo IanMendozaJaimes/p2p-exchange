@@ -83,6 +83,13 @@ for (const c of contracts) {
   nameOnChainToName[c.nameOnChain] = c.name
 }
 
+const permissionsConfig = [
+  {
+    target: `${contractNames.escrow}@active`,
+    actor: `${contractNames.escrow}@eosio.code`
+  }
+]
+
 function isLocalNode () {
   return chain == supportedChains.local
 }
@@ -92,5 +99,5 @@ function sleep(ms) {
 }
 
 module.exports = {
-  contracts, contractNames, nameOnChainToName, owner, ownerPublicKeys, publicKeys, isLocalNode, sleep, chain
+  contracts, contractNames, nameOnChainToName, owner, ownerPublicKeys, publicKeys, isLocalNode, sleep, chain, permissionsConfig
 }

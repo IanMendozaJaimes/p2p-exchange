@@ -4,63 +4,65 @@ ACTION escrow::reset()
 {
   require_auth(get_self());
 
-  auto uitr = users.begin();
-  while(uitr != users.end())
+  user_tables users_t(get_self(), get_self().value);
+  auto uitr = users_t.begin();
+  while(uitr != users_t.end())
   {
-    uitr = users.erase(uitr);
+    uitr = users_t.erase(uitr);
   }
 
-  auto titr = trxstats.begin();
-  while(titr != trxstats.end())
+  balances_tables balances_t(get_self(), get_self().value);
+  auto bitr = balances_t.begin();
+  while(bitr != balances_t.end())
   {
-    titr = trxstats.erase(titr);
+    bitr = balances_t.erase(bitr);
   }
 
-  auto bitr = balances.begin();
-  while(bitr != balances.end())
+  transactions_stats_tables trx_stats_t(get_self(), get_self().value);
+  auto titr = trx_stats_t.begin();
+  while(titr != trx_stats_t.end())
   {
-    bitr = balances.erase(bitr);
+    titr = trx_stats_t.erase(titr);
   }
 
-  auto sitr = selloffers.begin();
-  while(sitr != selloffers.end())
+  offer_tables offers_t(get_self(), get_self().value);
+  auto oitr = offers_t.begin();
+  while(oitr != offers_t.end())
   {
-    sitr = selloffers.erase(sitr);
+    oitr = offers_t.erase(oitr);
   }
 
-  auto boitr = buyoffers.begin();
-  while(boitr != buyoffers.end())
+  buy_sell_relation_tables buy_sell_t(get_self(), get_self().value);
+  auto bsritr = buy_sell_t.begin();
+  while(bsritr != buy_sell_t.end())
   {
-    boitr = buyoffers.erase(boitr);
-  }
-
-  auto bsritr = buysellrel.begin();
-  while(bsritr != buysellrel.end())
-  {
-    bsritr = buysellrel.erase(bsritr);
+    bsritr = buy_sell_t.erase(bsritr);
   }
 }
 
-ACTION escrow::deposit(const name & from, const name & to, const asset & quantity, const string & memo)
+ACTION escrow::deposit(const name & from, const name & to, const asset & quantity, const std::string & memo)
 {
   if(get_first_receiver() == seeds::token && to == get_self() && from != get_self())
   {
-    check_user(from);
+    user_tables users_t(get_self(), get_self().value);
+    auto uitr = users_t.find(from.value);
+    check(uitr != users_t.end(), "user not found");
 
     util::check_seeds_user_status(from, util::seeds_resident_status);
     util::check_asset(quantity);
 
-    auto bitr = balances.find(from.value);
+    balances_tables balances_t(get_self(), get_self().value);
+    auto bitr = balances_t.find(from.value);
 
-    if(bitr != balances.end())
+    if(bitr != balances_t.end())
     {
-      balances.modify(bitr, _self, [&](auto & balance){
+      balances_t.modify(bitr, _self, [&](auto & balance){
         balance.available_balance += quantity;
       });
     }
     else
     {
-      balances.emplace(_self, [&](auto & balance){
+      balances_t.emplace(_self, [&](auto & balance){
         balance.account = from;
         balance.available_balance = quantity;
         balance.swap_balance = asset(0, util::seeds_symbol);
@@ -76,15 +78,17 @@ ACTION escrow::withdraw(const name & account, const asset & quantity)
 
   util::check_asset(quantity);
 
-  auto bitr = balances.find(account.value);
-  check(bitr != balances.end(), "balance not found");
-  check(bitr->available_balance >= quantity, "user has not enough available balance");
+  balances_tables balances_t(get_self(), get_self().value);
 
-  balances.modify(bitr, _self, [&](auto & balance){
+  auto bitr = balances_t.find(account.value);
+  check(bitr != balances_t.end(), "balance not found");
+  check(bitr->available_balance >= quantity, "user does not have enough available balance");
+
+  balances_t.modify(bitr, _self, [&](auto & balance){
     balance.available_balance -= quantity;
   });
 
-  send_transfer(account, quantity, string("withdraw"));
+  send_transfer(account, quantity, std::string("withdraw"));
 }
 
 ACTION escrow::upsertuser(
@@ -99,11 +103,12 @@ ACTION escrow::upsertuser(
 
   util::check_seeds_user_status(account, util::seeds_visitor_status);
 
-  auto uitr = users.find(account.value);
+  user_tables users_t(get_self(), get_self().value);
+  auto uitr = users_t.find(account.value);
 
-  if (uitr != users.end())
+  if (uitr != users_t.end())
   {
-    users.modify(uitr, _self, [&](auto & item){
+    users_t.modify(uitr, _self, [&](auto & item){
       item.contact_methods = contact_methods;
       item.payment_methods = payment_methods;
       item.time_zone = time_zone;
@@ -112,7 +117,7 @@ ACTION escrow::upsertuser(
   }
   else
   {
-    users.emplace(_self, [&](auto & item){
+    users_t.emplace(_self, [&](auto & item){
       item.account = account;
       item.contact_methods = contact_methods;
       item.payment_methods = payment_methods;
@@ -122,83 +127,124 @@ ACTION escrow::upsertuser(
   }
 }
 
-ACTION escrow::addselloffer(const name & seller, const asset & total_offered, const uint64_t price_percentage)
+ACTION escrow::addselloffer(const name & seller, const asset & total_offered, const uint64_t & price_percentage)
 {
   require_auth(seller);
 
   util::check_seeds_user_status(seller, util::seeds_resident_status);
   util::check_asset(total_offered);
 
-  auto uitr = users.get(seller.value, "user not found");
+  balances_tables balances_t(get_self(), get_self().value);
   
-  auto bitr = balances.find(seller.value);
-  check(bitr != balances.end(), "user does not have a balance entry");
-  check(bitr->available_balance >= total_offered, "user does not have enough balance to create the offer");
+  auto bitr = balances_t.find(seller.value);
+  check(bitr != balances_t.end(), "user does not have a balance entry");
+  check(bitr->available_balance >= total_offered, "user does not have enough available balance to create the offer");
 
-  balances.modify(bitr, _self, [&](auto & balance){
+  balances_t.modify(bitr, _self, [&](auto & balance){
     balance.available_balance -= total_offered;
     balance.swap_balance += total_offered;
   });
 
-  selloffers.emplace(_self, [&](auto & offer){
-    offer.id = selloffers.available_primary_key();
+  user_tables users_t(get_self(), get_self().value);
+  auto uitr = users_t.get(seller.value, "user not found");
+
+  offer_tables offers_t(get_self(), get_self().value);
+
+  offers_t.emplace(_self, [&](auto & offer){
+    offer.id = offers_t.available_primary_key();
     offer.seller = seller;
-    offer.total_offered = total_offered;
-    offer.available_quantity = total_offered;
-    offer.price_percentage = price_percentage;
+    offer.buyer = name("");
+    offer.type = offer_type_sell;
+    offer.quantity_info = {
+      { name("totaloffered"), total_offered },
+      { name("available"), total_offered }
+    };
+    offer.price_info.insert(std::make_pair(name("priceper"), price_percentage));
     offer.created_date = current_time_point();
+    offer.status_history.insert(std::make_pair(sell_offer_status_active, current_time_point()));
+    offer.current_status = sell_offer_status_active;
+    offer.payment_methods = uitr.payment_methods;
     offer.time_zone = uitr.time_zone;
     offer.fiat_currency = uitr.fiat_currency;
   });
 }
 
-ACTION escrow::delselloffer(const uint64_t & sell_offer_id)
+ACTION escrow::cancelsoffer(const uint64_t & sell_offer_id)
 {
-  auto oitr = selloffers.find(sell_offer_id);
-  check(oitr != selloffers.end(), "sell offer not found");
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto oitr = offers_t.find(sell_offer_id);
+  check(oitr != offers_t.end(), "sell offer not found");
+  check(oitr->type == offer_type_sell, "offer is not a sell offer");
 
   name seller = oitr->seller;
 
   require_auth(seller);
 
-  auto bitr = balances.find(seller.value);
-  check(bitr != balances.end(), "user balance not found");
+  balances_tables balances_t(get_self(), get_self().value);
+  auto bitr = balances_t.find(seller.value);
+  check(bitr != balances_t.end(), "user balance not found");
 
-  balances.modify(bitr, _self, [&](auto & balance){
-    balance.swap_balance -= oitr->available_quantity;
-    balance.available_balance += oitr->available_quantity;
+  auto quantity_info = oitr->quantity_info;
+  auto available = quantity_info.find(name("available"));
+
+  balances_t.modify(bitr, _self, [&](auto & balance){
+    balance.swap_balance -= available->second;
+    balance.available_balance += available->second;
   });
 
-  selloffers.erase(oitr);
+  offers_t.modify(oitr, _self, [&](auto & offer){
+    offer.status_history.insert(std::make_pair(sell_offer_status_canceled, current_time_point()));
+    offer.current_status = sell_offer_status_canceled;
+    offer.quantity_info.at(name("available")) = asset(0, util::seeds_symbol);
+  });
+
+  // cancel the non-accepted buy offers associated with this sell offer?
+
 }
 
-ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, const asset & quantity)
+ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, const asset & quantity, const std::string & payment_method)
 {
   require_auth(buyer);
 
   util::check_seeds_user_status(buyer, util::seeds_visitor_status);
   util::check_asset(quantity);
 
-  auto uitr = users.get(buyer.value, "user not found");
-  auto sitr = selloffers.get(sell_offer_id, "sell offer not found");
+  user_tables users_t(get_self(), get_self().value);
+  auto uitr = users_t.get(buyer.value, "user not found");
 
-  check(sitr.available_quantity >= quantity, "sell offer does not have enough funds");
+  offer_tables offers_t(get_self(), get_self().value);
+  auto sitr = offers_t.get(sell_offer_id, "sell offer not found");
 
-  uint64_t id = buyoffers.available_primary_key();
+  check(sitr.type == offer_type_sell, "offer is not a sell offer");
+  check(sitr.quantity_info[name("available")] >= quantity, "sell offer does not have enough funds");
+  check(sitr.seller != buyer, "can not propose a buy offer for your own sell offer");
 
-  buyoffers.emplace(_self, [&](auto & buyoffer){
-    buyoffer.id = id;
-    buyoffer.buyer = buyer;
-    buyoffer.seller = sitr.seller;
-    buyoffer.quantity = quantity;
-    buyoffer.price_percentage = sitr.price_percentage;
-    buyoffer.created_date = current_time_point();
-    buyoffer.status_history.insert(std::make_pair(buy_offer_status_pending, current_time_point()));
-    buyoffer.status = buy_offer_status_pending;
+  auto allowed_payment_method = sitr.payment_methods.find(payment_method);
+  check(allowed_payment_method != sitr.payment_methods.end(), "payment method is not allowed");
+
+  uint64_t id = offers_t.available_primary_key();
+
+  offers_t.emplace(_self, [&](auto & offer){
+    offer.id = id;
+    offer.seller = sitr.seller;
+    offer.buyer = buyer;
+    offer.type = offer_type_buy;
+    offer.quantity_info.insert(std::make_pair(name("buyquantity"), quantity));
+    offer.price_info = sitr.price_info;
+    offer.price_info.insert(std::make_pair(name("seedsperusd"), 0));
+    offer.created_date = current_time_point();
+    offer.status_history.insert(std::make_pair(buy_offer_status_pending, current_time_point()));
+    offer.payment_methods.insert(*allowed_payment_method);
+    offer.current_status = buy_offer_status_pending;
+    offer.time_zone = sitr.time_zone;
+    offer.fiat_currency = sitr.fiat_currency;
   });
 
-  buysellrel.emplace(_self, [&](auto & rel){
-    rel.id = buysellrel.available_primary_key();
+  buy_sell_relation_tables buysellrel_t(get_self(), get_self().value);
+
+  buysellrel_t.emplace(_self, [&](auto & rel){
+    rel.id = buysellrel_t.available_primary_key();
     rel.sell_offer_id = sell_offer_id;
     rel.buy_offer_id = id;
   });
@@ -206,14 +252,22 @@ ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, c
 
 ACTION escrow::delbuyoffer(const uint64_t & buy_offer_id)
 {
-  auto bitr = buyoffers.find(buy_offer_id);
-  
-  check(bitr != buyoffers.end(), "buy offer not found");
-  check(bitr->status == buy_offer_status_pending, "can not delete offer, status is not pending");
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto bitr = offers_t.find(buy_offer_id);  
+  check(bitr != offers_t.end(), "buy offer not found");
+  check(bitr->type == offer_type_buy, "offer is not a buy offer");
+  check(bitr->current_status == buy_offer_status_pending, "can not delete offer, status is not pending");
 
   require_auth(bitr->buyer);
 
-  auto buysellrel_by_buy = buysellrel.get_index<name("bybuy")>();
+  uint64_t max_seller_time = config_get_uint64(name("b.accpt.lim"));
+  uint64_t cutoff = current_time_point().sec_since_epoch() - max_seller_time;
+  check(bitr->created_date.sec_since_epoch() < cutoff, "can not delete offer, it is too early");
+
+  buy_sell_relation_tables buysellrel_t(get_self(), get_self().value);
+
+  auto buysellrel_by_buy = buysellrel_t.get_index<name("bybuy")>();
   auto bsritr = buysellrel_by_buy.find(buy_offer_id);
 
   if(bsritr != buysellrel_by_buy.end())
@@ -221,48 +275,109 @@ ACTION escrow::delbuyoffer(const uint64_t & buy_offer_id)
     buysellrel_by_buy.erase(bsritr);
   }
 
-  buyoffers.erase(bitr);
+  offers_t.erase(bitr);
 }
 
 ACTION escrow::accptbuyoffr(const uint64_t & buy_offer_id)
 {
-  auto boitr = buyoffers.find(buy_offer_id);
-  check(boitr != buyoffers.end(), "buy offer not found");
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.find(buy_offer_id);
+  check(boitr != offers_t.end(), "buy offer not found");
+  check(boitr->type == offer_type_buy, "offer is not a buy offer");
+  check(boitr->current_status == buy_offer_status_pending, "can not accept this buy offer, it's status is not pending");
 
   name seller = boitr->seller;
-  asset quantity = boitr->quantity;
+  asset quantity = boitr->quantity_info.find(name("buyquantity"))->second;
 
   require_auth(seller);
 
-  // TODO: check the time outs
-
-  buyoffers.modify(boitr, _self, [&](auto & buyoffer){
+  offers_t.modify(boitr, _self, [&](auto & buyoffer){
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_accepted, current_time_point()));
-    buyoffer.status = buy_offer_status_accepted;
+    buyoffer.current_status = buy_offer_status_accepted;
   });
 
-  auto buysellrel_by_buy = buysellrel.get_index<name("bybuy")>();
-  auto bsritr = buysellrel_by_buy.get(buy_offer_id, "buy offer if relation not found");
+  buy_sell_relation_tables buysellrel_t(get_self(), get_self().value);
 
-  auto sitr = selloffers.find(bsritr.sell_offer_id);
-  check(sitr != selloffers.end(), "sell offer not found");
+  auto buysellrel_by_buy = buysellrel_t.get_index<name("bybuy")>();
+  auto bsritr = buysellrel_by_buy.get(buy_offer_id, "buy offer id relation not found");
 
-  check(sitr->available_quantity >= quantity, "sell offer does not have enough funds");
+  auto sitr = offers_t.find(bsritr.sell_offer_id);
+  check(sitr != offers_t.end(), "sell offer not found");
 
-  selloffers.modify(sitr, _self, [&](auto & selloffer){
-    selloffer.available_quantity -= quantity;
+  asset available = sitr->quantity_info.find(name("available"))->second;
+  check(available >= quantity, "sell offer does not have enough funds");
+
+  offers_t.modify(sitr, _self, [&](auto & selloffer){
+    selloffer.quantity_info.at(name("available")) = available - quantity;
   });
 
-  auto bitr = balances.find(seller.value);
-  check(bitr != balances.end(), "seller balance not found");
+  balances_tables balances_t(get_self(), get_self().value);
 
-  balances.modify(bitr, _self, [&](auto & balance){
+  auto bitr = balances_t.find(seller.value);
+  check(bitr != balances_t.end(), "seller balance not found");
+
+  balances_t.modify(bitr, _self, [&](auto & balance){
     balance.swap_balance -= quantity;
     balance.escrow_balance += quantity;
   });
 }
 
-void escrow::send_transfer(const name & beneficiary, const asset & quantity, const string & memo)
+// ACTION escrow::rejctbuyoffr () {} ?
+
+ACTION escrow::payoffer(const uint64_t & buy_offer_id)
+{
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.find(buy_offer_id);
+  check(boitr != offers_t.end(), "buy offer not found");
+  check(boitr->type == offer_type_buy, "offer is not a buy offer");
+
+  require_auth(boitr->buyer);
+
+  check(boitr->current_status == buy_offer_status_accepted, "can not pay the offer, the offer is not accepted");
+
+  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+    buyoffer.status_history.insert(std::make_pair(buy_offer_status_paid, current_time_point()));
+    buyoffer.current_status = buy_offer_status_paid;
+  });
+}
+
+ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id)
+{
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.find(buy_offer_id);
+  check(boitr != offers_t.end(), "buy offer not found");
+
+  name seller = boitr->seller;
+
+  if(has_auth(seller)) require_auth(seller);
+  else require_auth(get_self());
+
+  check(boitr->current_status == buy_offer_status_paid, "can not confirm payment, offer is not marked as paid");
+
+  asset quantity = boitr->quantity_info.find(name("buyquantity"))->second;
+
+  send_transfer(boitr->buyer, quantity, std::string("SEEDS bought from " + seller.to_string()));
+
+  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+    buyoffer.status_history.insert(std::make_pair(buy_offer_status_successful, current_time_point()));
+    buyoffer.current_status = buy_offer_status_successful;
+  });
+
+  balances_tables balances_t(get_self(), get_self().value);
+
+  auto bitr = balances_t.find(seller.value);
+
+  balances_t.modify(bitr, _self, [&](auto & balance){
+    balance.escrow_balance -= quantity;
+  });
+}
+
+// ACTION escrow::initarbitrge() {}
+
+void escrow::send_transfer(const name & beneficiary, const asset & quantity, const std::string & memo)
 {
   action(
     permission_level(get_self(), "active"_n),
