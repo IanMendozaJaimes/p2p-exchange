@@ -40,6 +40,25 @@ ACTION escrow::reset()
   }
 }
 
+ACTION escrow::resetoffers()
+{
+  require_auth(get_self());
+
+  offer_tables offers_t(get_self(), get_self().value);
+  auto oitr = offers_t.begin();
+  while(oitr != offers_t.end())
+  {
+    oitr = offers_t.erase(oitr);
+  }
+
+  buy_sell_relation_tables buy_sell_t(get_self(), get_self().value);
+  auto bsritr = buy_sell_t.begin();
+  while(bsritr != buy_sell_t.end())
+  {
+    bsritr = buy_sell_t.erase(bsritr);
+  }  
+}
+
 ACTION escrow::deposit(const name & from, const name & to, const asset & quantity, const std::string & memo)
 {
   if(get_first_receiver() == seeds::token && to == get_self() && from != get_self())

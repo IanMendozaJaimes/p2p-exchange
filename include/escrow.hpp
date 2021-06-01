@@ -20,6 +20,8 @@ CONTRACT escrow : public contract {
 
     ACTION reset();
 
+    ACTION resetoffers();
+
     ACTION deposit(const name & from, const name & to, const asset & quantity, const std::string & memo);
 
     ACTION withdraw(const name & account, const asset & quantity);
@@ -96,6 +98,7 @@ CONTRACT escrow : public contract {
       name fiat_currency;
 
       uint64_t primary_key () const { return id; }
+      uint64_t by_date () const { return std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch(); }
       uint128_t by_type_id () const { return (uint128_t(type.value) << 64) + id; }
       uint128_t by_seller_id () const { return (uint128_t(seller.value) << 64) + id; }
       uint128_t by_seller_date () const { return (uint128_t(seller.value) << 64) + (std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch()); }
@@ -104,9 +107,12 @@ CONTRACT escrow : public contract {
       uint128_t by_current_status_seller () const { return (uint128_t(current_status.value) << 64) + seller.value; }
       uint128_t by_current_status_buyer () const { return (uint128_t(current_status.value) << 64) + buyer.value; }
       uint128_t by_current_status_id () const { return (uint128_t(current_status.value) << 64) + id; }
+      uint128_t by_current_status_date () const { return (uint128_t(current_status.value) << 64) + (std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch()); }
     };
 
     typedef eosio::multi_index<name("offers"), offer_table,
+      indexed_by<name("bydate"),
+      const_mem_fun<offer_table, uint64_t, &offer_table::by_date>>,
       indexed_by<name("bytypeid"),
       const_mem_fun<offer_table, uint128_t, &offer_table::by_type_id>>,
       indexed_by<name("bysellerid"),
@@ -122,7 +128,9 @@ CONTRACT escrow : public contract {
       indexed_by<name("bycstatusb"),
       const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_buyer>>,
       indexed_by<name("bycstatusid"),
-      const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_id>>
+      const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_id>>,
+      indexed_by<name("bystatusdate"),
+      const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_date>>
     > offer_tables;
 
     TABLE buy_sell_relation_table {
@@ -167,7 +175,8 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
   } else if (code == receiver) {
       switch (action) {
           EOSIO_DISPATCH_HELPER(escrow, 
-          (reset)(withdraw)
+          (reset)(resetoffers)
+          (withdraw)
           (upsertuser)
           (addselloffer)(cancelsoffer)
           (addbuyoffer)(delbuyoffer)
