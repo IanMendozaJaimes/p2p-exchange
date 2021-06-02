@@ -44,7 +44,7 @@ describe('Escrow', function () {
   })
 
   it('Transfer Seeds', async function () {
-    
+
     console.log('deposit to the escrow contract')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
@@ -143,7 +143,7 @@ describe('Escrow', function () {
 
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
-    
+
     console.log('create sell offer')
     await contracts.escrow.addselloffer(seconduser, '1500.3333 SEEDS', 11000, { authorization: `${seconduser}@active` })
 
@@ -238,19 +238,141 @@ describe('Escrow', function () {
     await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
     console.log('create sell offer')
-    await contracts.escrow.addselloffer(seconduser, '1500.3333 SEEDS', 11000, { authorization: `${seconduser}@active` })
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(seconduser, '500.0000 SEEDS', 11000, { authorization: `${seconduser}@active` })
 
-    await contracts.escrow.addbuyoffer(thirduser, 0, '333.7777 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    let allowedPaymentMethods = true
+    try {
+      await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'bank', { authorization: `${thirduser}@active` })
+      allowedPaymentMethods = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'payment method is not allowed',
+        message: 'payment method is not allowed (expected)',
+        throwError: true
+      })
+    }
 
-    const buyOffers = await rpc.get_table_rows({
-      code: escrow,
-      scope: escrow,
-      table: 'offers',
-      json: true,
-      limit: 100
-    })
-    console.log(JSON.stringify(buyOffers, null, 2))
+    let onlyEnoughFoundsInSaleOffer = true
+    try {
+      await contracts.escrow.addbuyoffer(thirduser, 0, '1001.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+      onlyEnoughFoundsInSaleOffer = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'sell offer does not have enough funds',
+        message: 'sell offer does not have enough funds (expected)',
+        throwError: true
+      })
+    }
+
+    // let onlyIfOfferExists = true
+    // try {
+    //   await contracts.escrow.addbuyoffer(thirduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    //   onlyIfOfferExists = false
+    // } catch (error) {
+    //   assertError({
+    //     error,
+    //     textInside: 'sell offer not found',
+    //     message: 'sell offer not found (expected)',
+    //     throwError: true
+    //   })
+    // }
+
+    // let minOffer = true
+    // try {
+    //   await contracts.escrow.addbuyoffer(thirduser, 1, '0.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    //   minOffer = false
+    // } catch (error) {
+    //   assertError({
+    //     error,
+    //     textInside: 'quantity must be greater than 0',
+    //     message: 'quantity must be greater than 0 (expected)',
+    //     throwError: true
+    //   })
+    // }
+
+    let notSelffOffer = true
+    try {
+      await contracts.escrow.addbuyoffer(firstuser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${firstuser}@active` })
+      notSelffOffer = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'can not propose a buy offer for your own sell offer',
+        message: 'can not propose a buy offer for your own sell offer (expected)',
+        throwError: true
+      })
+    }
+
+    let onlyDeleteBuyOffer = true
+    try {
+      await contracts.escrow.delbuyoffer(0, { authorization: `${seconduser}@active` })
+      onlyDeleteBuyOffer = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'offer is not a buy offer',
+        message: 'offer is not a buy offer (expected)',
+        throwError: true
+      })
+    }
+
+    // Test offer to delete (id 2)
+    try {
+      await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    } catch (error) {
+      console.log('error', error)
+    }
+
+    let onlyOwnerCanDelete = true
+    try {
+      await contracts.escrow.delbuyoffer(2, { authorization: `${seconduser}@active` })
+      onlyOwnerCanDelete = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: `missing authority of ${thirduser}`,
+        message: `missing authority of ${thirduser} (expected)`,
+        throwError: true
+      })
+    }
+
+    // Set status diferent to pending
+    try {
+      await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+    } catch (error) {
+      console.log('error', error)
+    }
+
+    let onlyPending = true
+    try {
+      await contracts.escrow.delbuyoffer(2, { authorization: `${thirduser}@active` })
+      onlyPending = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'can not delete offer, status is not pending',
+        message: 'can not delete offer, status is not pending (expected)',
+        throwError: true
+      })
+    }
+
+    // assert.deepStrictEqual(onlyEnoughFoundsInSaleOffer, true)
+    // assert.deepStrictEqual(onlyIfOfferExists, true)
+    // assert.deepStrictEqual(minOffer, true)
+    // assert.deepStrictEqual(allowedPaymentMethods, true)
+    // assert.deepStrictEqual(notSelffOffer, true)
+
+    // const buyOffers = await rpc.get_table_rows({
+    //   code: escrow,
+    //   scope: escrow,
+    //   table: 'offers',
+    //   json: true,
+    //   limit: 100
+    // })
+    // console.log('buys', buyOffers.rows)
 
   })
 
