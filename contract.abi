@@ -1,0 +1,416 @@
+{
+  "version": "eosio::abi/1.1",
+  "types": [{
+      "new_type_name": "SettingsValues",
+      "type": "variant_monostate_uint64_int64_float64_name_asset_string"
+    },{
+      "new_type_name": "mapna",
+      "type": "pair_name_asset[]"
+    },{
+      "new_type_name": "mapnt",
+      "type": "pair_name_time_point[]"
+    },{
+      "new_type_name": "mapnui64",
+      "type": "pair_name_uint64[]"
+    },{
+      "new_type_name": "mapss",
+      "type": "pair_string_string[]"
+    }
+  ],
+  "structs": [{
+      "name": "accptbuyoffr",
+      "base": "",
+      "fields": [{
+          "name": "buy_offer_id",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "addbuyoffer",
+      "base": "",
+      "fields": [{
+          "name": "buyer",
+          "type": "name"
+        },{
+          "name": "sell_offer_id",
+          "type": "uint64"
+        },{
+          "name": "quantity",
+          "type": "asset"
+        },{
+          "name": "payment_method",
+          "type": "string"
+        }
+      ]
+    },{
+      "name": "addselloffer",
+      "base": "",
+      "fields": [{
+          "name": "seller",
+          "type": "name"
+        },{
+          "name": "total_offered",
+          "type": "asset"
+        },{
+          "name": "price_percentage",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "balances_table",
+      "base": "",
+      "fields": [{
+          "name": "account",
+          "type": "name"
+        },{
+          "name": "available_balance",
+          "type": "asset"
+        },{
+          "name": "swap_balance",
+          "type": "asset"
+        },{
+          "name": "escrow_balance",
+          "type": "asset"
+        }
+      ]
+    },{
+      "name": "buy_sell_relation_table",
+      "base": "",
+      "fields": [{
+          "name": "id",
+          "type": "uint64"
+        },{
+          "name": "sell_offer_id",
+          "type": "uint64"
+        },{
+          "name": "buy_offer_id",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "cancelsoffer",
+      "base": "",
+      "fields": [{
+          "name": "sell_offer_id",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "config_table",
+      "base": "",
+      "fields": [{
+          "name": "key",
+          "type": "name"
+        },{
+          "name": "value",
+          "type": "SettingsValues"
+        },{
+          "name": "description",
+          "type": "string"
+        }
+      ]
+    },{
+      "name": "confrmpaymnt",
+      "base": "",
+      "fields": [{
+          "name": "buy_offer_id",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "delbuyoffer",
+      "base": "",
+      "fields": [{
+          "name": "buy_offer_id",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "deposit",
+      "base": "",
+      "fields": [{
+          "name": "from",
+          "type": "name"
+        },{
+          "name": "to",
+          "type": "name"
+        },{
+          "name": "quantity",
+          "type": "asset"
+        },{
+          "name": "memo",
+          "type": "string"
+        }
+      ]
+    },{
+      "name": "monostate",
+      "base": "",
+      "fields": []
+    },{
+      "name": "offer_table",
+      "base": "",
+      "fields": [{
+          "name": "id",
+          "type": "uint64"
+        },{
+          "name": "seller",
+          "type": "name"
+        },{
+          "name": "buyer",
+          "type": "name"
+        },{
+          "name": "type",
+          "type": "name"
+        },{
+          "name": "quantity_info",
+          "type": "mapna"
+        },{
+          "name": "price_info",
+          "type": "mapnui64"
+        },{
+          "name": "created_date",
+          "type": "time_point"
+        },{
+          "name": "status_history",
+          "type": "mapnt"
+        },{
+          "name": "payment_methods",
+          "type": "mapss"
+        },{
+          "name": "current_status",
+          "type": "name"
+        },{
+          "name": "time_zone",
+          "type": "name"
+        },{
+          "name": "fiat_currency",
+          "type": "name"
+        }
+      ]
+    },{
+      "name": "pair_name_asset",
+      "base": "",
+      "fields": [{
+          "name": "key",
+          "type": "name"
+        },{
+          "name": "value",
+          "type": "asset"
+        }
+      ]
+    },{
+      "name": "pair_name_time_point",
+      "base": "",
+      "fields": [{
+          "name": "key",
+          "type": "name"
+        },{
+          "name": "value",
+          "type": "time_point"
+        }
+      ]
+    },{
+      "name": "pair_name_uint64",
+      "base": "",
+      "fields": [{
+          "name": "key",
+          "type": "name"
+        },{
+          "name": "value",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "pair_string_string",
+      "base": "",
+      "fields": [{
+          "name": "key",
+          "type": "string"
+        },{
+          "name": "value",
+          "type": "string"
+        }
+      ]
+    },{
+      "name": "payoffer",
+      "base": "",
+      "fields": [{
+          "name": "buy_offer_id",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "reset",
+      "base": "",
+      "fields": []
+    },{
+      "name": "transactions_stats_table",
+      "base": "",
+      "fields": [{
+          "name": "account",
+          "type": "name"
+        },{
+          "name": "total_trx",
+          "type": "uint64"
+        },{
+          "name": "sell_successful",
+          "type": "uint64"
+        },{
+          "name": "buy_successful",
+          "type": "uint64"
+        }
+      ]
+    },{
+      "name": "upsertuser",
+      "base": "",
+      "fields": [{
+          "name": "account",
+          "type": "name"
+        },{
+          "name": "contact_methods",
+          "type": "mapss"
+        },{
+          "name": "payment_methods",
+          "type": "mapss"
+        },{
+          "name": "time_zone",
+          "type": "name"
+        },{
+          "name": "fiat_currency",
+          "type": "name"
+        }
+      ]
+    },{
+      "name": "user_table",
+      "base": "",
+      "fields": [{
+          "name": "account",
+          "type": "name"
+        },{
+          "name": "contact_methods",
+          "type": "mapss"
+        },{
+          "name": "payment_methods",
+          "type": "mapss"
+        },{
+          "name": "time_zone",
+          "type": "name"
+        },{
+          "name": "fiat_currency",
+          "type": "name"
+        }
+      ]
+    },{
+      "name": "withdraw",
+      "base": "",
+      "fields": [{
+          "name": "account",
+          "type": "name"
+        },{
+          "name": "quantity",
+          "type": "asset"
+        }
+      ]
+    }
+  ],
+  "actions": [{
+      "name": "accptbuyoffr",
+      "type": "accptbuyoffr",
+      "ricardian_contract": ""
+    },{
+      "name": "addbuyoffer",
+      "type": "addbuyoffer",
+      "ricardian_contract": ""
+    },{
+      "name": "addselloffer",
+      "type": "addselloffer",
+      "ricardian_contract": ""
+    },{
+      "name": "cancelsoffer",
+      "type": "cancelsoffer",
+      "ricardian_contract": ""
+    },{
+      "name": "confrmpaymnt",
+      "type": "confrmpaymnt",
+      "ricardian_contract": ""
+    },{
+      "name": "delbuyoffer",
+      "type": "delbuyoffer",
+      "ricardian_contract": ""
+    },{
+      "name": "deposit",
+      "type": "deposit",
+      "ricardian_contract": ""
+    },{
+      "name": "payoffer",
+      "type": "payoffer",
+      "ricardian_contract": ""
+    },{
+      "name": "reset",
+      "type": "reset",
+      "ricardian_contract": ""
+    },{
+      "name": "upsertuser",
+      "type": "upsertuser",
+      "ricardian_contract": ""
+    },{
+      "name": "withdraw",
+      "type": "withdraw",
+      "ricardian_contract": ""
+    }
+  ],
+  "tables": [{
+      "name": "balances",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": [],
+      "type": "balances_table"
+    },{
+      "name": "buysellrel",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": [],
+      "type": "buy_sell_relation_table"
+    },{
+      "name": "config",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": [],
+      "type": "config_table"
+    },{
+      "name": "offers",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": [],
+      "type": "offer_table"
+    },{
+      "name": "trxstats",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": [],
+      "type": "transactions_stats_table"
+    },{
+      "name": "users",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": [],
+      "type": "user_table"
+    }
+  ],
+  "ricardian_clauses": [],
+  "error_messages": [],
+  "abi_extensions": [],
+  "variants": [{
+      "name": "variant_monostate_uint64_int64_float64_name_asset_string",
+      "types": [
+        "monostate",
+        "uint64",
+        "int64",
+        "float64",
+        "name",
+        "asset",
+        "string"
+      ]
+    }
+  ]
+}
