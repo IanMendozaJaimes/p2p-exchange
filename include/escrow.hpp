@@ -108,6 +108,8 @@ CONTRACT escrow : public contract {
       uint128_t by_current_status_buyer () const { return (uint128_t(current_status.value) << 64) + buyer.value; }
       uint128_t by_current_status_id () const { return (uint128_t(current_status.value) << 64) + id; }
       uint128_t by_current_status_date () const { return (uint128_t(current_status.value) << 64) + (std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch()); }
+      uint128_t by_current_status_timezone () const { return (uint128_t(current_status.value) << 64) + time_zone.value; }
+      uint128_t by_current_status_currency () const { return (uint128_t(current_status.value) << 64) + fiat_currency.value; }
     };
 
     typedef eosio::multi_index<name("offers"), offer_table,
@@ -130,7 +132,11 @@ CONTRACT escrow : public contract {
       indexed_by<name("bycstatusid"),
       const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_id>>,
       indexed_by<name("bystatusdate"),
-      const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_date>>
+      const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_date>>,
+      indexed_by<name("bystimezone"),
+      const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_timezone>>,
+      indexed_by<name("byscurrency"),
+      const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_currency>>
     > offer_tables;
 
     TABLE buy_sell_relation_table {
