@@ -10,7 +10,7 @@
 using namespace eosio;
 
 CONTRACT escrow : public contract {
-  
+
   public:
     using contract::contract;
     escrow(name receiver, name code, datastream<const char*> ds)
@@ -42,10 +42,12 @@ CONTRACT escrow : public contract {
 
     ACTION confrmpaymnt(const uint64_t & buy_offer_id);
 
+    ACTION createarbgrp(const uint64_t & buy_offer_id);
+
   private:
 
     const name offer_type_sell = name("offer.sell");
-    const name offer_type_buy = name("offer.buy"); 
+    const name offer_type_buy = name("offer.buy");
 
     const name sell_offer_status_active = name("s.active");
     const name sell_offer_status_soldout = name("s.soldout");
@@ -56,6 +58,7 @@ CONTRACT escrow : public contract {
     const name buy_offer_status_paid = name("b.paid");
     const name buy_offer_status_confirmed = name("b.confirmd");
     const name buy_offer_status_successful = name("b.success");
+    const name buy_offer_status_arbitrage = name("b.arbitrage");
 
     DEFINE_CONFIG_TABLE
     DEFINE_CONFIG_GET
@@ -76,7 +79,7 @@ CONTRACT escrow : public contract {
       uint64_t total_trx;
       uint64_t sell_successful;
       uint64_t buy_successful; // does it make any difference?
-    
+
       uint64_t primary_key () const { return account.value; }
       uint128_t by_total_account () const { return (uint128_t(total_trx) << 64) + account.value; }
       uint128_t by_sell_account () const { return (uint128_t(sell_successful) << 64) + account.value; }
@@ -180,13 +183,14 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
       execute_action<escrow>(name(receiver), name(code), &escrow::deposit);
   } else if (code == receiver) {
       switch (action) {
-          EOSIO_DISPATCH_HELPER(escrow, 
+          EOSIO_DISPATCH_HELPER(escrow,
           (reset)(resetoffers)
           (withdraw)
           (upsertuser)
           (addselloffer)(cancelsoffer)
           (addbuyoffer)(delbuyoffer)
           (accptbuyoffr)(payoffer)(confrmpaymnt)
+          (createarbgrp)
         )
       }
   }

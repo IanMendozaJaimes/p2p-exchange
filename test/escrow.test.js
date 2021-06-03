@@ -4,6 +4,7 @@ const { getContracts, getAccountBalance } = require('../scripts/eosio-util')
 const { getSeedsContracts, seedsContracts, seedsAccounts, seedsSymbol } = require('../scripts/seeds-util')
 const { assertError } = require('../scripts/eosio-errors')
 const { contractNames, isLocalNode } = require('../scripts/config')
+const { setParamsValue } = require('../scripts/contract-settings')
 
 const { escrow } = contractNames
 const { firstuser, seconduser, thirduser, fourthuser } = seedsAccounts
@@ -24,7 +25,7 @@ describe('Escrow', function () {
     contracts = await getContracts([escrow])
     seeds = await getSeedsContracts([seedsContracts.token, seedsContracts.accounts])
     seedsUsers = [firstuser, seconduser, thirduser]
-
+    await setParamsValue()
   })
 
   beforeEach(async function () {
@@ -381,10 +382,10 @@ describe('Escrow', function () {
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
     await contracts.escrow.addbuyoffer(seconduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
 
-    let onlyPayAccepted = true
+    let onlyPayBuyOffers = true
     try {
       await contracts.escrow.payoffer(0, { authorization: `${seconduser}@active` })
-      onlyPayAccepted = false
+      onlyPayBuyOffers = false
     } catch (error) {
       assertError({
         error,
@@ -394,11 +395,10 @@ describe('Escrow', function () {
       })
     }
 
-
-    let onlyPayBuyOffers = true
+    let onlyPayAccepted = true
     try {
       await contracts.escrow.payoffer(4, { authorization: `${seconduser}@active` })
-      onlyPayBuyOffers = false
+      onlyPayAccepted = false
     } catch (error) {
       assertError({
         error,
@@ -408,11 +408,17 @@ describe('Escrow', function () {
       })
     }
 
-    // assert.deepStrictEqual(onlyEnoughFoundsInSaleOffer, true)
-    // assert.deepStrictEqual(onlyIfOfferExists, true)
-    // assert.deepStrictEqual(minOffer, true)
-    // assert.deepStrictEqual(allowedPaymentMethods, true)
-    // assert.deepStrictEqual(notSelffOffer, true)
+    assert.deepStrictEqual(onlyEnoughFoundsInSaleOffer, true)
+    assert.deepStrictEqual(onlyIfOfferExists, true)
+    assert.deepStrictEqual(minOffer, true)
+    assert.deepStrictEqual(allowedPaymentMethods, true)
+    assert.deepStrictEqual(notSelffOffer, true)
+    assert.deepStrictEqual(onlyDeleteBuyOffer, true)
+    assert.deepStrictEqual(onlyOwnerCanDelete, true)
+    assert.deepStrictEqual(onlyInTimeRange, true)
+    assert.deepStrictEqual(onlyPending, true)
+    assert.deepStrictEqual(onlyPayBuyOffers, true)
+    assert.deepStrictEqual(onlyPayAccepted, true)
 
     // const buyOffers = await rpc.get_table_rows({
     //   code: escrow,
@@ -421,8 +427,113 @@ describe('Escrow', function () {
     //   json: true,
     //   limit: 100
     // })
-    // console.log('buys', buyOffers.rows)
+    // let offer = buyOffers.rows[2]
+    // let timeOfPayment = offer.status_history.find(el => el.key == 'b.accepted')
+
+    // console.log('time of accepted', timeOfPayment)
+    // console.log('buys', JSON.stringify(buyOffers.rows[2]))
 
   })
 
+  it('Arbitrage buy offers', async function () {
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    // await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+
+    let onlyOfferExists = true
+    try {
+      await contracts.escrow.createarbgrp(3, { authorization: `${seconduser}@active` })
+      onlyIfOfferExists = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'buy offer not found',
+        message: 'buy offer not found (expected)',
+        throwError: true
+      })
+    }
+
+    let onlyBuyOffer = true
+    try {
+      await contracts.escrow.createarbgrp(0, { authorization: `${seconduser}@active` })
+      onlyBuyOffer = true
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'offer is not a buy offer',
+        message: 'offer is not a buy offer (expected)',
+        throwError: true
+      })
+    }
+
+    let onlyPaidOffer = true
+    try {
+      await contracts.escrow.createarbgrp(1, { authorization: `${seconduser}@active` })
+      onlyPaidOffer = true
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'can not create arbitrage group, the offer is not paid',
+        message: 'can not create arbitrage group, the offer is not paid (expected)',
+        throwError: true
+      })
+    }
+
+    //Pay offer
+    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+
+    let onlyBuyer = true
+    try {
+      await contracts.escrow.createarbgrp(1, { authorization: `${firstuser}@active` })
+      onlyBuyer = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: `missing authority of ${seconduser}`,
+        message: `only ${seconduser} (buyer) can start arbitrage (expected)`,
+        throwError: true
+      })
+    }
+
+    // let onlyAfter24h = true
+    // try {
+    //   await contracts.escrow.createarbgrp(1, { authorization: `${seconduser}@active` })
+    //   onlyAfter24h = false
+    // } catch (error) {
+    //   assertError({
+    //     error,
+    //     textInside: 'can not create arbitrage group, it is too early',
+    //     message: 'can not create arbitrage group, it is too early (expected)',
+    //     throwError: true
+    //   })
+    // }
+
+    // Set time of waiting to 1s to testing
+    // await setParamsValue(true)
+    let isInArbitrage = false
+    try {
+      await contracts.escrow.createarbgrp(1, { authorization: `${seconduser}@active` })
+      isInArbitrage = true
+    } catch (error) {
+      console.log('error', error)
+    }
+
+    assert.deepStrictEqual(onlyOfferExists, true)
+    assert.deepStrictEqual(onlyBuyOffer, true)
+    assert.deepStrictEqual(onlyPaidOffer, true)
+    assert.deepStrictEqual(onlyBuyer, true)
+    // assert.deepStrictEqual(onlyAfter24h, true)
+    assert.deepStrictEqual(isInArbitrage, true)
+
+    const buyOffers = await rpc.get_table_rows({
+       code: escrow,
+       scope: escrow,
+       table: 'offers',
+       json: true,
+       limit: 100
+    })
+    console.log(JSON.stringify(buyOffers.rows[1]))
+  })
 })

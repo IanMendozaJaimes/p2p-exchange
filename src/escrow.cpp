@@ -437,3 +437,49 @@ void escrow::add_success_transaction(const name & account, const name & trx_type
     }
   });
 }
+
+void escrow::createarbgrp(const uint64_t & buy_offer_id)
+{
+  // 1. SELLER creates a SELL-OFFER
+  // 2. BUYER creates a BUY-OFFER
+  // 3. SELLER accepts BUY-OFFER
+  // 4. BUYER pays BUY-OFFER (only if accepted)
+  // 5. SELLER confirms BUY-OFFER payment (if not, arbitrage can be started)
+
+  /** check
+   * - 1. Offer is an buy offer - DONE
+   * - 2. Offer exists - DONE
+   * - 3. Auth only to buyer
+   * - 4. Buy offer has status 'buy_offer_status_paid'
+   * - 5. Has passed at least 24 hours sice payment was made (payment_date > current_date - b.confrm.lim)
+   * **/
+  offer_tables offers_t(get_self(), get_self().value);
+  // util::check_seeds_user_status(buyer, util::seeds_visitor_status); // (1)
+
+  auto boitr = offers_t.find(buy_offer_id);
+  // name buyer = boitr->buyer;
+  //if(has_auth(buyer)) require_auth(buyer);
+  check(boitr != offers_t.end(), "buy offer not found"); // (1)
+  check(boitr->type == offer_type_buy, "offer is not a buy offer"); // (2)
+
+  require_auth(boitr->buyer); // (3)
+
+  check(boitr->current_status == buy_offer_status_paid, "can not create arbitrage group, the offer is not paid"); // (4)
+
+  uint64_t max_confirm_time = config_get_uint64(name("b.confrm.lim"));
+  auto accptd_time = boitr->status_history.find(name("b.accepted"))->second;
+  uint64_t cutoff = current_time_point().sec_since_epoch() - max_confirm_time;
+  eosio::print("debug flag, cutoff, now");
+  eosio::print(cutoff);
+  eosio::print(accptd_time.sec_since_epoch());
+  // check(accptd_time.sec_since_epoch() < cutoff, "can not create arbitrage group, it is too early");
+
+
+  // SET STATUS AS ARBITRAGE
+  offers_t.modify(boitr, _self, [&](auto & buyoffer) {
+    buyoffer.status_history.insert(std::make_pair(buy_offer_status_arbitrage, current_time_point()));
+    buyoffer.current_status = buy_offer_status_arbitrage;
+  });
+
+
+}

@@ -4,7 +4,7 @@ const { contractNames } = require('../scripts/config')
 const { settings } = contractNames
 
 async function setParamsValue () {
-  const keys = Object.keys(params)
+  let keys = Object.keys(params)
 
   for (const key of keys) {
     await transact({

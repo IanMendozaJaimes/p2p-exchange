@@ -4,7 +4,7 @@
     "description": "Maximum time seller has to accept a buy offer"
   },
   "b.confrm.lim": {
-    "value": ["uint64", 86400],
+    "value": ["uint64", 1],
     "description": "Maximum time buyer has to confirm fiat sent to seller"
   }
 }
