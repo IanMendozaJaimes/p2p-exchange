@@ -48,6 +48,7 @@ describe('Escrow', function () {
     console.log('deposit to the escrow contract')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
+    // await seeds.token.transfer(thirduser, escrow, '2000.0000 SEEDS', '', { authorization: `${thirduser}@active` })
 
     let atLeastResidents = true
     try {
@@ -241,6 +242,7 @@ describe('Escrow', function () {
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
     await contracts.escrow.addselloffer(seconduser, '500.0000 SEEDS', 11000, { authorization: `${seconduser}@active` })
 
+    console.log('Add buy offers')
     let allowedPaymentMethods = true
     try {
       await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'bank', { authorization: `${thirduser}@active` })
@@ -267,31 +269,31 @@ describe('Escrow', function () {
       })
     }
 
-    // let onlyIfOfferExists = true
-    // try {
-    //   await contracts.escrow.addbuyoffer(thirduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
-    //   onlyIfOfferExists = false
-    // } catch (error) {
-    //   assertError({
-    //     error,
-    //     textInside: 'sell offer not found',
-    //     message: 'sell offer not found (expected)',
-    //     throwError: true
-    //   })
-    // }
+    let onlyIfOfferExists = true
+    try {
+      await contracts.escrow.addbuyoffer(thirduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+      onlyIfOfferExists = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'sell offer not found',
+        message: 'sell offer not found (expected)',
+        throwError: true
+      })
+    }
 
-    // let minOffer = true
-    // try {
-    //   await contracts.escrow.addbuyoffer(thirduser, 1, '0.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
-    //   minOffer = false
-    // } catch (error) {
-    //   assertError({
-    //     error,
-    //     textInside: 'quantity must be greater than 0',
-    //     message: 'quantity must be greater than 0 (expected)',
-    //     throwError: true
-    //   })
-    // }
+    let minOffer = true
+    try {
+      await contracts.escrow.addbuyoffer(thirduser, 1, '0.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+      minOffer = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'quantity must be greater than 0',
+        message: 'quantity must be greater than 0 (expected)',
+        throwError: true
+      })
+    }
 
     let notSelffOffer = true
     try {
@@ -304,6 +306,14 @@ describe('Escrow', function () {
         message: 'can not propose a buy offer for your own sell offer (expected)',
         throwError: true
       })
+    }
+
+    console.log('Delete buy offers')
+    // Test offer to delete (id 2)
+    try {
+      await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    } catch (error) {
+      console.log('error', error)
     }
 
     let onlyDeleteBuyOffer = true
@@ -319,13 +329,6 @@ describe('Escrow', function () {
       })
     }
 
-    // Test offer to delete (id 2)
-    try {
-      await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
-    } catch (error) {
-      console.log('error', error)
-    }
-
     let onlyOwnerCanDelete = true
     try {
       await contracts.escrow.delbuyoffer(2, { authorization: `${seconduser}@active` })
@@ -335,6 +338,19 @@ describe('Escrow', function () {
         error,
         textInside: `missing authority of ${thirduser}`,
         message: `missing authority of ${thirduser} (expected)`,
+        throwError: true
+      })
+    }
+
+    let onlyInTimeRange = true
+    try {
+      await contracts.escrow.delbuyoffer(2, { authorization: `${thirduser}@active` })
+      let onlyInTimeRange = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'can not delete offer, it is too early',
+        message: 'can not delete offer, it is too early (expected)',
         throwError: true
       })
     }
@@ -355,6 +371,39 @@ describe('Escrow', function () {
         error,
         textInside: 'can not delete offer, status is not pending',
         message: 'can not delete offer, status is not pending (expected)',
+        throwError: true
+      })
+    }
+
+    console.log('pay offers')
+    // New offer to test payment
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+
+    let onlyPayAccepted = true
+    try {
+      await contracts.escrow.payoffer(0, { authorization: `${seconduser}@active` })
+      onlyPayAccepted = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'offer is not a buy offer',
+        message: 'offer is not a buy offer (expected)',
+        throwError: true
+      })
+    }
+
+
+    let onlyPayBuyOffers = true
+    try {
+      await contracts.escrow.payoffer(4, { authorization: `${seconduser}@active` })
+      onlyPayBuyOffers = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'can not pay the offer, the offer is not accepted',
+        message: 'can not pay the offer, the offer is not accepted (expected)',
         throwError: true
       })
     }

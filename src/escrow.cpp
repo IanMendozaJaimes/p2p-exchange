@@ -56,7 +56,7 @@ ACTION escrow::resetoffers()
   while(bsritr != buy_sell_t.end())
   {
     bsritr = buy_sell_t.erase(bsritr);
-  }  
+  }
 }
 
 ACTION escrow::deposit(const name & from, const name & to, const asset & quantity, const std::string & memo)
@@ -163,7 +163,7 @@ ACTION escrow::addselloffer(const name & seller, const asset & total_offered, co
   util::check_asset(total_offered);
 
   balances_tables balances_t(get_self(), get_self().value);
-  
+
   auto bitr = balances_t.find(seller.value);
   check(bitr != balances_t.end(), "user does not have a balance entry");
   check(bitr->available_balance >= total_offered, "user does not have enough available balance to create the offer");
@@ -282,7 +282,7 @@ ACTION escrow::delbuyoffer(const uint64_t & buy_offer_id)
 {
   offer_tables offers_t(get_self(), get_self().value);
 
-  auto bitr = offers_t.find(buy_offer_id);  
+  auto bitr = offers_t.find(buy_offer_id);
   check(bitr != offers_t.end(), "buy offer not found");
   check(bitr->type == offer_type_buy, "offer is not a buy offer");
   check(bitr->current_status == buy_offer_status_pending, "can not delete offer, status is not pending");
