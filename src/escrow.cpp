@@ -132,7 +132,6 @@ ACTION escrow::upsertuser(
       item.payment_methods = payment_methods;
       item.time_zone = time_zone;
       item.fiat_currency = fiat_currency;
-      // item.is_arbiter = false;
     });
   }
   else
@@ -143,6 +142,7 @@ ACTION escrow::upsertuser(
       item.payment_methods = payment_methods;
       item.time_zone = time_zone;
       item.fiat_currency = fiat_currency;
+      item.is_arbiter = false;
     });
 
     transactions_stats_tables trx_stats_t(get_self(), get_self().value);

@@ -309,7 +309,6 @@ describe('Escrow', function () {
     }
 
     console.log('Delete buy offers')
-    // Test offer to delete (id 2)
     try {
       await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
     } catch (error) {
@@ -355,7 +354,6 @@ describe('Escrow', function () {
       })
     }
 
-    // Set status diferent to pending
     try {
       await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
     } catch (error) {
@@ -376,7 +374,6 @@ describe('Escrow', function () {
     }
 
     console.log('pay offers')
-    // New offer to test payment
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
     await contracts.escrow.addbuyoffer(seconduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
@@ -408,21 +405,17 @@ describe('Escrow', function () {
       })
     }
 
-    // assert.deepStrictEqual(onlyEnoughFoundsInSaleOffer, true)
-    // assert.deepStrictEqual(onlyIfOfferExists, true)
-    // assert.deepStrictEqual(minOffer, true)
-    // assert.deepStrictEqual(allowedPaymentMethods, true)
-    // assert.deepStrictEqual(notSelffOffer, true)
-
-    // const buyOffers = await rpc.get_table_rows({
-    //   code: escrow,
-    //   scope: escrow,
-    //   table: 'offers',
-    //   json: true,
-    //   limit: 100
-    // })
-    // console.log('buys', buyOffers.rows)
-
+    assert.deepStrictEqual(onlyEnoughFoundsInSaleOffer, true)
+    assert.deepStrictEqual(onlyIfOfferExists, true)
+    assert.deepStrictEqual(minOffer, true)
+    assert.deepStrictEqual(allowedPaymentMethods, true)
+    assert.deepStrictEqual(notSelffOffer, true)
+    assert.deepStrictEqual(onlyDeleteBuyOffer, true)
+    assert.deepStrictEqual(onlyOwnerCanDelete, true)
+    assert.deepStrictEqual(onlyInTimeRange, true)
+    assert.deepStrictEqual(onlyPending, true)
+    assert.deepStrictEqual(onlyPayAccepted, true)
+    assert.deepStrictEqual(onlyPayBuyOffers, true)
   })
 
   it('Add arbiter', async function () {
@@ -440,7 +433,6 @@ describe('Escrow', function () {
       })
     }
 
-    // Set as arbiter
     await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
 
     let onlyNotArbiters = true
@@ -456,7 +448,6 @@ describe('Escrow', function () {
       })
     }
 
-    // Del arbiter
     await contracts.escrow.delarbiter(firstuser, { authorization: `${escrow}@active` })
 
     let canAddArbiter = false
@@ -470,26 +461,9 @@ describe('Escrow', function () {
     assert.deepStrictEqual(onlyContractOwner, true)
     assert.deepStrictEqual(onlyNotArbiters, true)
     assert.deepStrictEqual(canAddArbiter, true)
-
-    // const users = await rpc.get_table_rows({
-    //   code: escrow,
-    //   scope: escrow,
-    //   table: 'users',
-    //   json: true,
-    //   limit: 100
-    // })
-    // console.log(users.rows)
   })
 
   it('Del arbiter', async function () {
-    // const users = await rpc.get_table_rows({
-    //   code: escrow,
-    //   scope: escrow,
-    //   table: 'users',
-    //   json: true,
-    //   limit: 100
-    // })
-    // console.log('before', users.rows[0])
 
     let onlyContractOwner = true
     try {
@@ -517,7 +491,6 @@ describe('Escrow', function () {
       })
     }
 
-    // Set as arbiter
     await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
 
     let canDelArbiter = false
@@ -531,15 +504,5 @@ describe('Escrow', function () {
     assert.deepStrictEqual(onlyContractOwner, true)
     assert.deepStrictEqual(onlyArbiter, true)
     assert.deepStrictEqual(canDelArbiter, true)
-
-    // const users2 = await rpc.get_table_rows({
-    //   code: escrow,
-    //   scope: escrow,
-    //   table: 'users',
-    //   json: true,
-    //   limit: 100
-    // })
-    // console.log('after', users2.rows[0])
   })
-
 })
