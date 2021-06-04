@@ -10,6 +10,7 @@ using std::string;
       mapss payment_methods; \
       name time_zone; \
       name fiat_currency; \
+      bool is_arbiter; \
 \
       uint64_t primary_key () const { return account.value; } \
       uint64_t by_timezone () const { return time_zone.value; } \
