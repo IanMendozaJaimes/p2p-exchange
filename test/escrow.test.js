@@ -4,6 +4,7 @@ const { getContracts, getAccountBalance } = require('../scripts/eosio-util')
 const { getSeedsContracts, seedsContracts, seedsAccounts, seedsSymbol } = require('../scripts/seeds-util')
 const { assertError } = require('../scripts/eosio-errors')
 const { contractNames, isLocalNode } = require('../scripts/config')
+const { setParamsValue } = require('../scripts/contract-settings')
 
 const { escrow } = contractNames
 const { firstuser, seconduser, thirduser, fourthuser } = seedsAccounts
@@ -24,7 +25,7 @@ describe('Escrow', function () {
     contracts = await getContracts([escrow])
     seeds = await getSeedsContracts([seedsContracts.token, seedsContracts.accounts])
     seedsUsers = [firstuser, seconduser, thirduser]
-
+    await setParamsValue()
   })
 
   beforeEach(async function () {
@@ -48,7 +49,6 @@ describe('Escrow', function () {
     console.log('deposit to the escrow contract')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
-    // await seeds.token.transfer(thirduser, escrow, '2000.0000 SEEDS', '', { authorization: `${thirduser}@active` })
 
     let atLeastResidents = true
     try {
@@ -423,6 +423,123 @@ describe('Escrow', function () {
     // })
     // console.log('buys', buyOffers.rows)
 
+  })
+
+  it('Add arbiter', async function () {
+
+    let onlyContractOwner = true
+    try {
+      await contracts.escrow.addarbiter(firstuser, { authorization: `${firstuser}@active` })
+      onlyContractOwner = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: `missing authority of ${escrow}`,
+        message: `missing authority of ${escrow} (expected)`,
+        throwError: true
+      })
+    }
+
+    // Set as arbiter
+    await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
+
+    let onlyNotArbiters = true
+    try {
+      await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
+      onlyNotArbiters = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'user is already arbiter',
+        message: 'user is already arbiter (expected)',
+        throwError: true
+      })
+    }
+
+    // Del arbiter
+    await contracts.escrow.delarbiter(firstuser, { authorization: `${escrow}@active` })
+
+    let canAddArbiter = false
+    try {
+      await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
+      canAddArbiter = true
+    } catch (error) {
+      console.log('error', error)
+    }
+
+    assert.deepStrictEqual(onlyContractOwner, true)
+    assert.deepStrictEqual(onlyNotArbiters, true)
+    assert.deepStrictEqual(canAddArbiter, true)
+
+    // const users = await rpc.get_table_rows({
+    //   code: escrow,
+    //   scope: escrow,
+    //   table: 'users',
+    //   json: true,
+    //   limit: 100
+    // })
+    // console.log(users.rows)
+  })
+
+  it('Del arbiter', async function () {
+    // const users = await rpc.get_table_rows({
+    //   code: escrow,
+    //   scope: escrow,
+    //   table: 'users',
+    //   json: true,
+    //   limit: 100
+    // })
+    // console.log('before', users.rows[0])
+
+    let onlyContractOwner = true
+    try {
+      await contracts.escrow.delarbiter(firstuser, { authorization: `${firstuser}@active` })
+      onlyContractOwner = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: `missing authority of ${escrow}`,
+        message: `missing authority of ${escrow} (expected)`,
+        throwError: true
+      })
+    }
+
+    let onlyArbiter = true
+    try {
+      await contracts.escrow.delarbiter(firstuser, { authorization: `${escrow}@active` })
+      onlyArbiter = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'user is not arbiter',
+        message: 'user is not arbiter (expected)',
+        throwError: true
+      })
+    }
+
+    // Set as arbiter
+    await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
+
+    let canDelArbiter = false
+    try {
+      await contracts.escrow.delarbiter(firstuser, { authorization: `${escrow}@active` })
+      canDelArbiter = true
+    } catch (error) {
+      console.log('error', error)
+    }
+
+    assert.deepStrictEqual(onlyContractOwner, true)
+    assert.deepStrictEqual(onlyArbiter, true)
+    assert.deepStrictEqual(canDelArbiter, true)
+
+    // const users2 = await rpc.get_table_rows({
+    //   code: escrow,
+    //   scope: escrow,
+    //   table: 'users',
+    //   json: true,
+    //   limit: 100
+    // })
+    // console.log('after', users2.rows[0])
   })
 
 })

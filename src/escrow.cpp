@@ -132,6 +132,7 @@ ACTION escrow::upsertuser(
       item.payment_methods = payment_methods;
       item.time_zone = time_zone;
       item.fiat_currency = fiat_currency;
+      // item.is_arbiter = false;
     });
   }
   else
@@ -435,5 +436,34 @@ void escrow::add_success_transaction(const name & account, const name & trx_type
     {
       trxstats.buy_successful += 1;
     }
+  });
+}
+
+void escrow::addarbiter(const name & account)
+{
+  require_auth(get_self());
+
+  user_tables users_t(get_self(), get_self().value);
+  auto uitr = users_t.find(account.value);
+  check(uitr != users_t.end(), "user not found");
+  check(uitr->is_arbiter == 0, "user is already arbiter");
+
+  users_t.modify(uitr, _self, [&](auto & user){
+    user.is_arbiter = true;
+  });
+
+}
+
+void escrow::delarbiter(const name & account)
+{
+  require_auth(get_self());
+
+  user_tables users_t(get_self(), get_self().value);
+  auto uitr = users_t.find(account.value);
+  check(uitr != users_t.end(), "user not found");
+  check(uitr->is_arbiter == 1, "user is not arbiter");
+
+  users_t.modify(uitr, _self, [&](auto & user){
+    user.is_arbiter = false;
   });
 }
