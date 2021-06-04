@@ -38,6 +38,13 @@ ACTION escrow::reset()
   {
     bsritr = buy_sell_t.erase(bsritr);
   }
+
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
+  auto aritr = arbitrage_offers_t.begin();
+  while(aritr != arbitrage_offers_t.end())
+  {
+    aritr = arbitrage_offers_t.erase(aritr);
+  }
 }
 
 ACTION escrow::resetoffers()
@@ -466,4 +473,39 @@ void escrow::delarbiter(const name & account)
   users_t.modify(uitr, _self, [&](auto & user){
     user.is_arbiter = false;
   });
+}
+
+void escrow::initarbitrage(const uint64_t & buy_offer_id, const name & arbiter)
+{
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.find(buy_offer_id);
+  check(boitr != offers_t.end(), "buy offer not found");
+
+  name seller = boitr->seller;
+  name buyer = boitr->buyer;
+
+  check((has_auth(seller) || has_auth(buyer)), "only seller or buyer can init arbitrage"); // Only seller or buyer
+
+  user_tables users_t(get_self(), get_self().value);
+  auto uitr = users_t.find(arbiter.value);
+  check(uitr != users_t.end(), "user not found");
+  check(uitr->is_arbiter == 1, "user is not arbiter");
+
+  auto paid_date = boitr->status_history.find(name("b.paid"))->second;
+  uint64_t max_seller_time = config_get_uint64(name("b.confrm.lim"));
+  uint64_t cutoff = current_time_point().sec_since_epoch() - max_seller_time;
+  check(paid_date.sec_since_epoch() < cutoff, "can not create arbitrage, it is too early");
+
+  arbitrage_tables arbitrage_offers_table(get_self(), get_self().value);
+
+  arbitrage_offers_table.emplace(_self, [&](auto & arbitrage){
+    arbitrage.offer_id = buy_offer_id;
+    arbitrage.arbiter = arbiter;
+    arbitrage.resolution = name("none");
+    arbitrage.notes = "";
+    arbitrage.created_date = current_time_point();
+    arbitrage.resolution_date = current_time_point();
+  });
+
 }

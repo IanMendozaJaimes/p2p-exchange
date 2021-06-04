@@ -9,7 +9,7 @@ const { setParamsValue } = require('../scripts/contract-settings')
 const { escrow } = contractNames
 const { firstuser, seconduser, thirduser, fourthuser } = seedsAccounts
 
-describe('Escrow', function () {
+describe('Escrow', async function () {
 
   let contracts
   let seeds
@@ -505,4 +505,80 @@ describe('Escrow', function () {
     assert.deepStrictEqual(onlyArbiter, true)
     assert.deepStrictEqual(canDelArbiter, true)
   })
+
+  await it('Create arbitrage', async function () {
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+    await seeds.token.transfer(seconduser, escrow, '1000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
+
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    console.time('paid')
+
+    try {
+      await contracts.escrow.initarbitrage(1, escrow, { authorization: `${escrow}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'only seller or buyer can init arbitrage',
+        message: 'only seller or buyer can init arbitrage (expected)',
+        throwError: true
+      })
+    }
+
+    // const users = await rpc.get_table_rows({
+    //   code: escrow,
+    //   scope: escrow,
+    //   table: 'users',
+    //   json: true,
+    //   limit: 100
+    // })
+    // console.log(users.rows)
+
+    try {
+      await contracts.escrow.initarbitrage(1, thirduser, { authorization: `${firstuser}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'user is not arbiter',
+        message: 'user is not arbiter (expected)',
+        throwError: true
+      })
+    }
+
+    await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
+
+    let onlyAfter24h = true
+    try {
+      await contracts.escrow.initarbitrage(1, thirduser, { authorization: `${firstuser}@active` })
+      onlyAfter24h = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'can not create arbitrage, it is too early',
+        message: 'can not create arbitrage, it is too early (expected)',
+        throwError: true
+      })
+    }
+
+    await setTimeout(async () => {
+      var canCreateArbitrage = false
+      await setParamsValue(true)
+      try {
+        await contracts.escrow.initarbitrage(1, thirduser, { authorization: `${firstuser}@active` })
+        canCreateArbitrage = true
+      } catch (error) {
+        console.log('error', error)
+      }
+      assert.deepStrictEqual(canCreateArbitrage, true)
+      console.log('can create arbitrage if time passed (expected)')
+    }, 2000);
+
+
+    assert.deepStrictEqual(onlyAfter24h, true)
+  })
+
+
+
 })

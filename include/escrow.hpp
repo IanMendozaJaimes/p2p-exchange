@@ -46,6 +46,8 @@ CONTRACT escrow : public contract {
 
     ACTION delarbiter(const name & account);
 
+    ACTION initarbitrage(const uint64_t & buy_offer_id, const name & arbiter);
+
   private:
 
     const name offer_type_sell = name("offer.sell");
@@ -60,6 +62,7 @@ CONTRACT escrow : public contract {
     const name buy_offer_status_paid = name("b.paid");
     const name buy_offer_status_confirmed = name("b.confirmd");
     const name buy_offer_status_successful = name("b.success");
+    const name buy_offer_status_arbitrage = name("b.arbitrage");
 
     DEFINE_CONFIG_TABLE
     DEFINE_CONFIG_GET
@@ -177,6 +180,28 @@ CONTRACT escrow : public contract {
     void send_transfer(const name & beneficiary, const asset & quantity, const std::string & memo);
     void add_success_transaction(const name & account, const name & trx_type);
 
+    TABLE arbitrage_offers_table {
+      uint64_t offer_id;
+      name arbiter;
+      name resolution;
+      string notes;
+      time_point created_date;
+      time_point resolution_date;
+
+      uint64_t primary_key () const { return offer_id; }
+      uint64_t by_created_date_id () const { return std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch(); }
+      uint128_t by_resolution_id () const { return (uint128_t(resolution.value) << 64) + offer_id; }
+      uint128_t by_arbiter_id () const { return (uint128_t(arbiter.value) << 64) + offer_id; }
+    };
+
+    typedef eosio::multi_index<name("arbitoffs"), arbitrage_offers_table,
+      indexed_by<name("bycrtddate"),
+      const_mem_fun<arbitrage_offers_table, uint64_t, &arbitrage_offers_table::by_created_date_id>>,
+      indexed_by<name("byresid"),
+      const_mem_fun<arbitrage_offers_table, uint128_t, &arbitrage_offers_table::by_resolution_id>>,
+      indexed_by<name("byarbitid"),
+      const_mem_fun<arbitrage_offers_table, uint128_t, &arbitrage_offers_table::by_arbiter_id>>
+    > arbitrage_tables;
 };
 
 extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
@@ -192,6 +217,7 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
           (addbuyoffer)(delbuyoffer)
           (accptbuyoffr)(payoffer)(confrmpaymnt)
           (addarbiter)(delarbiter)
+          (initarbitrage)
         )
       }
   }
