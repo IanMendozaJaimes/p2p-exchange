@@ -458,9 +458,18 @@ describe('Escrow', async function () {
       console.log('error', error)
     }
 
+    const users = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'users',
+      json: true,
+      limit: 100
+    })
+
     assert.deepStrictEqual(onlyContractOwner, true)
     assert.deepStrictEqual(onlyNotArbiters, true)
     assert.deepStrictEqual(canAddArbiter, true)
+    assert.deepStrictEqual(users.rows[0].is_arbiter, 1)
   })
 
   it('Del arbiter', async function () {
@@ -491,7 +500,11 @@ describe('Escrow', async function () {
       })
     }
 
-    await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
+    try {
+      await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
+    } catch (error) {
+      console.log('error', error)
+    }
 
     let canDelArbiter = false
     try {
@@ -501,12 +514,21 @@ describe('Escrow', async function () {
       console.log('error', error)
     }
 
+    const users = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'users',
+      json: true,
+      limit: 100
+    })
+
     assert.deepStrictEqual(onlyContractOwner, true)
     assert.deepStrictEqual(onlyArbiter, true)
     assert.deepStrictEqual(canDelArbiter, true)
+    assert.deepStrictEqual(users.rows[0].is_arbiter, 0)
   })
 
-  await it('Create arbitrage', async function () {
+  await it('Init arbitrage', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await seeds.token.transfer(seconduser, escrow, '1000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
@@ -521,8 +543,8 @@ describe('Escrow', async function () {
     } catch (error) {
       assertError({
         error,
-        textInside: 'only seller or buyer can init arbitrage',
-        message: 'only seller or buyer can init arbitrage (expected)',
+        textInside: `missing authority of ${seconduser}`,
+        message: `missing authority of ${seconduser} (expected)`,
         throwError: true
       })
     }
@@ -553,7 +575,19 @@ describe('Escrow', async function () {
       console.log('can create arbitrage if time passed (expected)')
     }, 2000);
 
-    // Check that an offer under arbitrage can't change it's status by other actions
+    await setTimeout(async () => {
+      await setParamsValue(true)
+      try {
+        await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+      } catch (error) {
+        assertError({
+          error,
+          textInside: 'arbitrage already exists',
+          message: 'arbitrage already exists (expected)',
+          throwError: true
+        })
+      }
+    }, 2500);
 
     await assert.deepStrictEqual(onlyAfter24h, true)
   })

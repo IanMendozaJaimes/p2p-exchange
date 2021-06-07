@@ -189,8 +189,7 @@ CONTRACT escrow : public contract {
       time_point resolution_date;
 
       uint64_t primary_key () const { return offer_id; }
-      uint64_t by_created_date_id () const { return std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch(); }
-      uint128_t by_resolution_id () const { return (uint128_t(resolution.value) << 64) + offer_id; }
+      uint128_t by_created_date_id () const { return uint128_t(created_date.sec_since_epoch() << 64) + offer_id; }
       uint128_t by_arbiter_id () const { return (uint128_t(arbiter.value) << 64) + offer_id; }
     };
 

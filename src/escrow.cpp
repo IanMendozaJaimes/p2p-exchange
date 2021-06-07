@@ -493,15 +493,17 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
   uint64_t cutoff = current_time_point().sec_since_epoch() - max_seller_time;
   check(paid_date.sec_since_epoch() < cutoff, "can not create arbitrage, it is too early");
 
-  arbitrage_tables arbitrage_offers_table(get_self(), get_self().value);
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
 
-  arbitrage_offers_table.emplace(_self, [&](auto & arbitrage){
+  auto aritr = arbitrage_offers_t.find(buy_offer_id);
+  check(aritr == arbitrage_offers_t.end(), "arbitrage already exists");
+
+  arbitrage_offers_t.emplace(_self, [&](auto & arbitrage){
     arbitrage.offer_id = buy_offer_id;
     arbitrage.arbiter = name("pending");;
     arbitrage.resolution = name("pending");
     arbitrage.notes = "";
     arbitrage.created_date = current_time_point();
-    arbitrage.resolution_date = current_time_point();
   });
 
 }
