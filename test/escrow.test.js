@@ -517,7 +517,7 @@ describe('Escrow', async function () {
     console.time('paid')
 
     try {
-      await contracts.escrow.initarbitrage(1, escrow, { authorization: `${escrow}@active` })
+      await contracts.escrow.initarbitrage(1, { authorization: `${escrow}@active` })
     } catch (error) {
       assertError({
         error,
@@ -527,31 +527,9 @@ describe('Escrow', async function () {
       })
     }
 
-    // const users = await rpc.get_table_rows({
-    //   code: escrow,
-    //   scope: escrow,
-    //   table: 'users',
-    //   json: true,
-    //   limit: 100
-    // })
-    // console.log(users.rows)
-
-    try {
-      await contracts.escrow.initarbitrage(1, thirduser, { authorization: `${firstuser}@active` })
-    } catch (error) {
-      assertError({
-        error,
-        textInside: 'user is not arbiter',
-        message: 'user is not arbiter (expected)',
-        throwError: true
-      })
-    }
-
-    await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
-
     let onlyAfter24h = true
     try {
-      await contracts.escrow.initarbitrage(1, thirduser, { authorization: `${firstuser}@active` })
+      await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
       onlyAfter24h = false
     } catch (error) {
       assertError({
@@ -566,17 +544,18 @@ describe('Escrow', async function () {
       var canCreateArbitrage = false
       await setParamsValue(true)
       try {
-        await contracts.escrow.initarbitrage(1, thirduser, { authorization: `${firstuser}@active` })
+        await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
         canCreateArbitrage = true
       } catch (error) {
         console.log('error', error)
       }
-      assert.deepStrictEqual(canCreateArbitrage, true)
+      await assert.deepStrictEqual(canCreateArbitrage, true)
       console.log('can create arbitrage if time passed (expected)')
     }, 2000);
 
+    // Check that an offer under arbitrage can't change it's status by other actions
 
-    assert.deepStrictEqual(onlyAfter24h, true)
+    await assert.deepStrictEqual(onlyAfter24h, true)
   })
 
 

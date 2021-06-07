@@ -46,7 +46,7 @@ CONTRACT escrow : public contract {
 
     ACTION delarbiter(const name & account);
 
-    ACTION initarbitrage(const uint64_t & buy_offer_id, const name & arbiter);
+    ACTION initarbitrage(const uint64_t & buy_offer_id);
 
   private:
 

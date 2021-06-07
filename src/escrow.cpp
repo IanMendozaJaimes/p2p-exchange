@@ -485,7 +485,8 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
   name seller = boitr->seller;
   name buyer = boitr->buyer;
 
-  check((has_auth(seller) || has_auth(buyer)), "only seller or buyer can init arbitrage"); // Only seller or buyer
+  name actor = has_auth(seller) ? seller : buyer;
+  require_auth(actor);
 
   auto paid_date = boitr->status_history.find(name("b.paid"))->second;
   uint64_t max_seller_time = config_get_uint64(name("b.confrm.lim"));
