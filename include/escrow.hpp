@@ -190,16 +190,13 @@ CONTRACT escrow : public contract {
 
       uint64_t primary_key () const { return offer_id; }
       uint128_t by_created_date_id () const { return uint128_t(created_date.sec_since_epoch() << 64) + offer_id; }
-<<<<<<< HEAD
-=======
       uint128_t by_resolution_id () const { return (uint128_t(resolution.value) << 64) + offer_id; }
->>>>>>> 02aa1211c4ff91d05a2560afdbf2b5f572faee86
       uint128_t by_arbiter_id () const { return (uint128_t(arbiter.value) << 64) + offer_id; }
     };
 
     typedef eosio::multi_index<name("arbitoffs"), arbitrage_offers_table,
       indexed_by<name("bycrtddate"),
-      const_mem_fun<arbitrage_offers_table, uint64_t, &arbitrage_offers_table::by_created_date_id>>,
+      const_mem_fun<arbitrage_offers_table, uint128_t, &arbitrage_offers_table::by_created_date_id>>,
       indexed_by<name("byresid"),
       const_mem_fun<arbitrage_offers_table, uint128_t, &arbitrage_offers_table::by_resolution_id>>,
       indexed_by<name("byarbitid"),
