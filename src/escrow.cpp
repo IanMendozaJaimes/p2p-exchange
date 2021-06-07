@@ -475,7 +475,7 @@ void escrow::delarbiter(const name & account)
   });
 }
 
-void escrow::initarbitrage(const uint64_t & buy_offer_id, const name & arbiter)
+void escrow::initarbitrage(const uint64_t & buy_offer_id)
 {
   offer_tables offers_t(get_self(), get_self().value);
 
@@ -487,11 +487,6 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id, const name & arbiter)
 
   check((has_auth(seller) || has_auth(buyer)), "only seller or buyer can init arbitrage"); // Only seller or buyer
 
-  user_tables users_t(get_self(), get_self().value);
-  auto uitr = users_t.find(arbiter.value);
-  check(uitr != users_t.end(), "user not found");
-  check(uitr->is_arbiter == 1, "user is not arbiter");
-
   auto paid_date = boitr->status_history.find(name("b.paid"))->second;
   uint64_t max_seller_time = config_get_uint64(name("b.confrm.lim"));
   uint64_t cutoff = current_time_point().sec_since_epoch() - max_seller_time;
@@ -501,8 +496,8 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id, const name & arbiter)
 
   arbitrage_offers_table.emplace(_self, [&](auto & arbitrage){
     arbitrage.offer_id = buy_offer_id;
-    arbitrage.arbiter = arbiter;
-    arbitrage.resolution = name("none");
+    arbitrage.arbiter = name("pending");;
+    arbitrage.resolution = name("pending");
     arbitrage.notes = "";
     arbitrage.created_date = current_time_point();
     arbitrage.resolution_date = current_time_point();
