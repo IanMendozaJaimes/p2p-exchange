@@ -506,4 +506,9 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
     arbitrage.created_date = current_time_point();
   });
 
+  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+    buyoffer.status_history.insert(std::make_pair(buy_offer_status_arbitrage, current_time_point()));
+    buyoffer.current_status = buy_offer_status_arbitrage;
+  });
+
 }

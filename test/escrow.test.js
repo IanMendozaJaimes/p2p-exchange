@@ -563,7 +563,7 @@ describe('Escrow', async function () {
     }
 
     console.time('sleep')
-    await sleep(1500)
+    await sleep(1700)
     console.timeLog('sleep')
 
     var canCreateArbitrage = false
@@ -586,7 +586,37 @@ describe('Escrow', async function () {
       })
     }
 
-    await assert.deepStrictEqual(canCreateArbitrage, true)
-    await assert.deepStrictEqual(onlyAfter24h, true)
+    const offers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    const arbitoffs = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'arbitoffs',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(offers.rows[1].status_history.find(el => el.key === 'b.arbitrage').key, 'b.arbitrage')
+    assert.deepStrictEqual(offers.rows[1].current_status, 'b.arbitrage')
+
+    delete arbitoffs.rows[0].created_date
+    delete arbitoffs.rows[0].resolution_date
+    assert.deepStrictEqual(arbitoffs.rows, [
+      {
+        "offer_id": 1,
+        "arbiter": "pending",
+        "resolution": "pending",
+        "notes": ""
+      }
+    ])
+
+    assert.deepStrictEqual(canCreateArbitrage, true)
+    assert.deepStrictEqual(onlyAfter24h, true)
   })
 })
