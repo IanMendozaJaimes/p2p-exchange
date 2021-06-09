@@ -176,15 +176,6 @@ describe('Escrow', async function () {
 
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 9300, { authorization: `${firstuser}@active` })
 
-    const escrowBalances = await rpc.get_table_rows({
-      code: escrow,
-      scope: escrow,
-      table: 'balances',
-      json: true,
-      limit: 100
-    })
-    console.log(escrowBalances)
-
     const sellOffers = await rpc.get_table_rows({
       code: escrow,
       scope: escrow,
@@ -192,7 +183,6 @@ describe('Escrow', async function () {
       json: true,
       limit: 100
     })
-    console.log(JSON.stringify(sellOffers, null, 2))
 
     console.log('delete sell offer')
     await contracts.escrow.cancelsoffer(1, { authorization: `${firstuser}@active` })
@@ -209,26 +199,6 @@ describe('Escrow', async function () {
         throwError: true
       })
     }
-
-    console.log('___________________________________________________________')
-
-    const escrowBalances2 = await rpc.get_table_rows({
-      code: escrow,
-      scope: escrow,
-      table: 'balances',
-      json: true,
-      limit: 100
-    })
-    console.log(escrowBalances2)
-
-    const sellOffers2 = await rpc.get_table_rows({
-      code: escrow,
-      scope: escrow,
-      table: 'offers',
-      json: true,
-      limit: 100
-    })
-    console.log(JSON.stringify(sellOffers2, null, 2))
 
   })
 

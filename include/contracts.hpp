@@ -14,4 +14,5 @@ namespace seeds
 {
   const name accounts = "accts.seeds"_n;
   const name token = "token.seeds"_n;
+  const name tlosto = "tlosto.seeds"_n;
 }
