@@ -533,7 +533,7 @@ describe('Escrow', async function () {
     }
 
     console.time('sleep')
-    await sleep(1700)
+    await sleep(1600)
     console.timeLog('sleep')
 
     var canCreateArbitrage = false
