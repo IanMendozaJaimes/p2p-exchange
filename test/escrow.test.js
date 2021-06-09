@@ -3,7 +3,7 @@ const { rpc } = require('../scripts/eos')
 const { getContracts, getAccountBalance } = require('../scripts/eosio-util')
 const { getSeedsContracts, seedsContracts, seedsAccounts, seedsSymbol } = require('../scripts/seeds-util')
 const { assertError } = require('../scripts/eosio-errors')
-const { contractNames, isLocalNode } = require('../scripts/config')
+const { contractNames, isLocalNode, sleep } = require('../scripts/config')
 const { setParamsValue } = require('../scripts/contract-settings')
 
 const { escrow } = contractNames
@@ -562,36 +562,31 @@ describe('Escrow', async function () {
       })
     }
 
-    await setTimeout(async () => {
-      var canCreateArbitrage = false
-      await setParamsValue(true)
-      try {
-        await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
-        canCreateArbitrage = true
-      } catch (error) {
-        console.log('error', error)
-      }
-      await assert.deepStrictEqual(canCreateArbitrage, true)
-      console.log('can create arbitrage if time passed (expected)')
-    }, 2000);
+    console.time('sleep')
+    await sleep(1500)
+    console.timeLog('sleep')
 
-    await setTimeout(async () => {
-      await setParamsValue(true)
-      try {
-        await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
-      } catch (error) {
-        assertError({
-          error,
-          textInside: 'arbitrage already exists',
-          message: 'arbitrage already exists (expected)',
-          throwError: true
-        })
-      }
-    }, 2500);
+    var canCreateArbitrage = false
+    await setParamsValue(true)
+    try {
+      await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+      canCreateArbitrage = true
+    } catch (error) {
+      console.log('error', error)
+    }
 
+    try {
+      await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'arbitrage already exists',
+        message: 'arbitrage already exists (expected)',
+        throwError: true
+      })
+    }
+
+    await assert.deepStrictEqual(canCreateArbitrage, true)
     await assert.deepStrictEqual(onlyAfter24h, true)
   })
-
-
-
 })
