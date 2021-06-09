@@ -101,7 +101,7 @@ CONTRACT escrow : public contract {
       name buyer;
       name type;
       mapna quantity_info;
-      mapasui64 price_info;
+      mapnui64 price_info;
       time_point created_date;
       mapnt status_history;
       mapss payment_methods;
