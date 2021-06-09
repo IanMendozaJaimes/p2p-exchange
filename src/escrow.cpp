@@ -189,8 +189,7 @@ ACTION escrow::addselloffer(const name & seller, const asset & total_offered, co
   price_table p = price.get();
 
   asset current_price = p.current_seeds_per_usd;
-  asset seedsperusd = current_price * (price_percentage / 10000);
-
+  double seedsperusd = current_price.amount * (price_percentage / 10000.0);
   offer_tables offers_t(get_self(), get_self().value);
 
   offers_t.emplace(_self, [&](auto & offer){
@@ -200,11 +199,11 @@ ACTION escrow::addselloffer(const name & seller, const asset & total_offered, co
     offer.type = offer_type_sell;
     offer.quantity_info = {
       { name("totaloffered"), total_offered },
-      { name("available"), total_offered }
+      { name("available"), total_offered },
     };
     offer.price_info = {
       { name("priceper"), price_percentage },
-      { name("seedsperusd"), seedsperusd.amount }
+      { name("seedsperusd"), seedsperusd }
     };
     offer.created_date = current_time_point();
     offer.status_history.insert(std::make_pair(sell_offer_status_active, current_time_point()));
@@ -278,7 +277,6 @@ ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, c
     offer.type = offer_type_buy;
     offer.quantity_info.insert(std::make_pair(name("buyquantity"), quantity));
     offer.price_info = sitr.price_info;
-    // offer.price_info.insert(std::make_pair(name("seedsperusd"), 0));
     offer.created_date = current_time_point();
     offer.status_history.insert(std::make_pair(buy_offer_status_pending, current_time_point()));
     offer.payment_methods.insert(*allowed_payment_method);
