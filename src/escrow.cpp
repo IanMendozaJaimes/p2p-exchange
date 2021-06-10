@@ -518,5 +518,38 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_arbitrage, current_time_point()));
     buyoffer.current_status = buy_offer_status_arbitrage;
   });
+}
+
+escrow::arbtrgeoffer(const & name arbiter, const & uint64_t & offer_id)
+{
+  user_tables users_t(get_self(), get_self().value);
+
+  auto uitr = users_t.find(arbiter.value);
+  check(uitr != users_t.end(), "user not found");
+  check(uitr->is_arbiter == 1, "user is not arbiter");
+
+  require_auth(arbiter);
+
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
+
+  auto aritr = arbitrage_offers_t.find(buy_offer_id);
+  check(aritr != arbitrage_offers_t.end(), "arbitrage does not exist");
+
+  arbitrage_offers_t.emplace(_self, [&](auto & arbitrage){
+    arbitrage.offer_id = buy_offer_id;
+    arbitrage.arbiter = name("pending");;
+    arbitrage.resolution = name("pending");
+    arbitrage.notes = "";
+    arbitrage.created_date = current_time_point();
+  });
+}
+
+escrow::resolvesellr(const & uint64_t & offer_id)
+{
+
+}
+
+escrow::resolvebuyer(const & uint64_t & offer_id)
+{
 
 }

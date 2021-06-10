@@ -50,6 +50,12 @@ CONTRACT escrow : public contract {
 
     ACTION initarbitrage(const uint64_t & buy_offer_id);
 
+    ACTION arbtrgeoffer(const & name arbiter, const & uint64_t & offer_id);
+
+    ACTION resolvesellr(const & uint64_t & offer_id);
+
+    ACTION resolvebuyer(const & uint64_t & offer_id);
+
   private:
 
     const name offer_type_sell = name("offer.sell");
