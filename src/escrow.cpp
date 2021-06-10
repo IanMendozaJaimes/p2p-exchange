@@ -38,6 +38,13 @@ ACTION escrow::reset()
   {
     bsritr = buy_sell_t.erase(bsritr);
   }
+
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
+  auto aritr = arbitrage_offers_t.begin();
+  while(aritr != arbitrage_offers_t.end())
+  {
+    aritr = arbitrage_offers_t.erase(aritr);
+  }
 }
 
 ACTION escrow::resetoffers()
@@ -466,4 +473,42 @@ void escrow::delarbiter(const name & account)
   users_t.modify(uitr, _self, [&](auto & user){
     user.is_arbiter = false;
   });
+}
+
+void escrow::initarbitrage(const uint64_t & buy_offer_id)
+{
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.find(buy_offer_id);
+  check(boitr != offers_t.end(), "buy offer not found");
+
+  name seller = boitr->seller;
+  name buyer = boitr->buyer;
+
+  name actor = has_auth(seller) ? seller : buyer;
+  require_auth(actor);
+
+  auto paid_date = boitr->status_history.find(name("b.paid"))->second;
+  uint64_t max_seller_time = config_get_uint64(name("b.confrm.lim"));
+  uint64_t cutoff = current_time_point().sec_since_epoch() - max_seller_time;
+  check(paid_date.sec_since_epoch() < cutoff, "can not create arbitrage, it is too early");
+
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
+
+  auto aritr = arbitrage_offers_t.find(buy_offer_id);
+  check(aritr == arbitrage_offers_t.end(), "arbitrage already exists");
+
+  arbitrage_offers_t.emplace(_self, [&](auto & arbitrage){
+    arbitrage.offer_id = buy_offer_id;
+    arbitrage.arbiter = name("pending");;
+    arbitrage.resolution = name("pending");
+    arbitrage.notes = "";
+    arbitrage.created_date = current_time_point();
+  });
+
+  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+    buyoffer.status_history.insert(std::make_pair(buy_offer_status_arbitrage, current_time_point()));
+    buyoffer.current_status = buy_offer_status_arbitrage;
+  });
+
 }

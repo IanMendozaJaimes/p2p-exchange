@@ -1,9 +1,11 @@
 const { transact, rpc } = require('./eos')
-const params = require('./config/params.json')
+let params = require('./config/params.json')
+const testparams = require('./config/testparams.json')
 const { contractNames } = require('../scripts/config')
 const { settings } = contractNames
 
-async function setParamsValue () {
+async function setParamsValue (test = false) {
+  if (test) params = testparams
   const keys = Object.keys(params)
 
   for (const key of keys) {

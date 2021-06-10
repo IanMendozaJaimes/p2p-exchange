@@ -3,13 +3,13 @@ const { rpc } = require('../scripts/eos')
 const { getContracts, getAccountBalance } = require('../scripts/eosio-util')
 const { getSeedsContracts, seedsContracts, seedsAccounts, seedsSymbol } = require('../scripts/seeds-util')
 const { assertError } = require('../scripts/eosio-errors')
-const { contractNames, isLocalNode } = require('../scripts/config')
+const { contractNames, isLocalNode, sleep } = require('../scripts/config')
 const { setParamsValue } = require('../scripts/contract-settings')
 
 const { escrow } = contractNames
 const { firstuser, seconduser, thirduser, fourthuser } = seedsAccounts
 
-describe('Escrow', function () {
+describe('Escrow', async function () {
 
   let contracts
   let seeds
@@ -458,9 +458,18 @@ describe('Escrow', function () {
       console.log('error', error)
     }
 
+    const users = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'users',
+      json: true,
+      limit: 100
+    })
+
     assert.deepStrictEqual(onlyContractOwner, true)
     assert.deepStrictEqual(onlyNotArbiters, true)
     assert.deepStrictEqual(canAddArbiter, true)
+    assert.deepStrictEqual(users.rows[0].is_arbiter, 1)
   })
 
   it('Del arbiter', async function () {
@@ -491,7 +500,11 @@ describe('Escrow', function () {
       })
     }
 
-    await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
+    try {
+      await contracts.escrow.addarbiter(firstuser, { authorization: `${escrow}@active` })
+    } catch (error) {
+      console.log('error', error)
+    }
 
     let canDelArbiter = false
     try {
@@ -501,8 +514,109 @@ describe('Escrow', function () {
       console.log('error', error)
     }
 
+    const users = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'users',
+      json: true,
+      limit: 100
+    })
+
     assert.deepStrictEqual(onlyContractOwner, true)
     assert.deepStrictEqual(onlyArbiter, true)
     assert.deepStrictEqual(canDelArbiter, true)
+    assert.deepStrictEqual(users.rows[0].is_arbiter, 0)
+  })
+
+  await it('Init arbitrage', async function () {
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+    await seeds.token.transfer(seconduser, escrow, '1000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
+
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    console.time('paid')
+
+    try {
+      await contracts.escrow.initarbitrage(1, { authorization: `${escrow}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: `missing authority of ${seconduser}`,
+        message: `missing authority of ${seconduser} (expected)`,
+        throwError: true
+      })
+    }
+
+    let onlyAfter24h = true
+    try {
+      await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+      onlyAfter24h = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'can not create arbitrage, it is too early',
+        message: 'can not create arbitrage, it is too early (expected)',
+        throwError: true
+      })
+    }
+
+    console.time('sleep')
+    await sleep(1700)
+    console.timeLog('sleep')
+
+    var canCreateArbitrage = false
+    await setParamsValue(true)
+    try {
+      await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+      canCreateArbitrage = true
+    } catch (error) {
+      console.log('error', error)
+    }
+
+    try {
+      await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'arbitrage already exists',
+        message: 'arbitrage already exists (expected)',
+        throwError: true
+      })
+    }
+
+    const offers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    const arbitoffs = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'arbitoffs',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(offers.rows[1].status_history.find(el => el.key === 'b.arbitrage').key, 'b.arbitrage')
+    assert.deepStrictEqual(offers.rows[1].current_status, 'b.arbitrage')
+
+    delete arbitoffs.rows[0].created_date
+    delete arbitoffs.rows[0].resolution_date
+    assert.deepStrictEqual(arbitoffs.rows, [
+      {
+        "offer_id": 1,
+        "arbiter": "pending",
+        "resolution": "pending",
+        "notes": ""
+      }
+    ])
+
+    assert.deepStrictEqual(canCreateArbitrage, true)
+    assert.deepStrictEqual(onlyAfter24h, true)
   })
 })
