@@ -189,7 +189,7 @@ ACTION escrow::addselloffer(const name & seller, const asset & total_offered, co
   price_table p = price.get();
 
   asset current_price = p.current_seeds_per_usd;
-  double seedsperusd = current_price.amount * (price_percentage / 10000.0);
+  uint64_t seedsperusd = current_price.amount * price_percentage;
   offer_tables offers_t(get_self(), get_self().value);
 
   offers_t.emplace(_self, [&](auto & offer){
