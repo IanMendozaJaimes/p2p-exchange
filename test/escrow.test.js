@@ -184,6 +184,8 @@ describe('Escrow', async function () {
       limit: 100
     })
 
+    console.log(JSON.stringify(sellOffers, null, 2))
+
     console.log('delete sell offer')
     await contracts.escrow.cancelsoffer(1, { authorization: `${firstuser}@active` })
 
@@ -498,7 +500,7 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(users.rows[0].is_arbiter, 0)
   })
 
-  await it('Init arbitrage', async function () {
+  it('Init arbitrage', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await seeds.token.transfer(seconduser, escrow, '1000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
