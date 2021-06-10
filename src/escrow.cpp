@@ -1,4 +1,5 @@
 #include <escrow.hpp>
+#include <tables/seeds.prices.hpp>
 
 ACTION escrow::reset()
 {
@@ -184,6 +185,11 @@ ACTION escrow::addselloffer(const name & seller, const asset & total_offered, co
   user_tables users_t(get_self(), get_self().value);
   auto uitr = users_t.get(seller.value, "user not found");
 
+  price_tables price(seeds::tlosto , seeds::tlosto.value);
+  price_table p = price.get();
+
+  asset current_price = p.current_seeds_per_usd;
+  uint64_t seedsperusd = current_price.amount * price_percentage;
   offer_tables offers_t(get_self(), get_self().value);
 
   offers_t.emplace(_self, [&](auto & offer){
@@ -193,9 +199,12 @@ ACTION escrow::addselloffer(const name & seller, const asset & total_offered, co
     offer.type = offer_type_sell;
     offer.quantity_info = {
       { name("totaloffered"), total_offered },
-      { name("available"), total_offered }
+      { name("available"), total_offered },
     };
-    offer.price_info.insert(std::make_pair(name("priceper"), price_percentage));
+    offer.price_info = {
+      { name("priceper"), price_percentage },
+      { name("seedsperusd"), seedsperusd }
+    };
     offer.created_date = current_time_point();
     offer.status_history.insert(std::make_pair(sell_offer_status_active, current_time_point()));
     offer.current_status = sell_offer_status_active;
@@ -268,7 +277,6 @@ ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, c
     offer.type = offer_type_buy;
     offer.quantity_info.insert(std::make_pair(name("buyquantity"), quantity));
     offer.price_info = sitr.price_info;
-    offer.price_info.insert(std::make_pair(name("seedsperusd"), 0));
     offer.created_date = current_time_point();
     offer.status_history.insert(std::make_pair(buy_offer_status_pending, current_time_point()));
     offer.payment_methods.insert(*allowed_payment_method);

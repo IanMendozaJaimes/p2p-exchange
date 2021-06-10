@@ -176,15 +176,6 @@ describe('Escrow', async function () {
 
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 9300, { authorization: `${firstuser}@active` })
 
-    const escrowBalances = await rpc.get_table_rows({
-      code: escrow,
-      scope: escrow,
-      table: 'balances',
-      json: true,
-      limit: 100
-    })
-    console.log(escrowBalances)
-
     const sellOffers = await rpc.get_table_rows({
       code: escrow,
       scope: escrow,
@@ -192,6 +183,7 @@ describe('Escrow', async function () {
       json: true,
       limit: 100
     })
+
     console.log(JSON.stringify(sellOffers, null, 2))
 
     console.log('delete sell offer')
@@ -209,26 +201,6 @@ describe('Escrow', async function () {
         throwError: true
       })
     }
-
-    console.log('___________________________________________________________')
-
-    const escrowBalances2 = await rpc.get_table_rows({
-      code: escrow,
-      scope: escrow,
-      table: 'balances',
-      json: true,
-      limit: 100
-    })
-    console.log(escrowBalances2)
-
-    const sellOffers2 = await rpc.get_table_rows({
-      code: escrow,
-      scope: escrow,
-      table: 'offers',
-      json: true,
-      limit: 100
-    })
-    console.log(JSON.stringify(sellOffers2, null, 2))
 
   })
 
@@ -528,7 +500,7 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(users.rows[0].is_arbiter, 0)
   })
 
-  await it('Init arbitrage', async function () {
+  it('Init arbitrage', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await seeds.token.transfer(seconduser, escrow, '1000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
@@ -563,7 +535,7 @@ describe('Escrow', async function () {
     }
 
     console.time('sleep')
-    await sleep(1700)
+    await sleep(1600)
     console.timeLog('sleep')
 
     var canCreateArbitrage = false

@@ -1,8 +1,10 @@
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/system.hpp>
+#include <eosio/singleton.hpp>
 #include <contracts.hpp>
 #include <tables/users.hpp>
+#include <tables/seeds.prices.hpp>
 #include <config.hpp>
 #include <util.hpp>
 #include <common.hpp>
@@ -68,6 +70,9 @@ CONTRACT escrow : public contract {
     DEFINE_CONFIG_GET
 
     DEFINE_USERS_TABLE
+
+    DEFINE_SEEDS_PRICE_TABLE
+    DEFINE_SEEDS_PRICE_MULTI_INDEX
 
     TABLE balances_table {
       name account;
@@ -208,6 +213,8 @@ CONTRACT escrow : public contract {
       indexed_by<name("byarbitid"),
       const_mem_fun<arbitrage_offers_table, uint128_t, &arbitrage_offers_table::by_arbiter_id>>
     > arbitrage_tables;
+
+    typedef singleton<"price"_n, price_table> price_tables;
 };
 
 extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
