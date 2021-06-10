@@ -12,7 +12,7 @@
     "initContract": "node scripts/commands.js run $1",
     "setParams": "node scripts/commands.js set params",
     "setPermissions": "node scripts/commands.js set permissions",
-    "test": "mocha"
+    "test": "mocha --timeout 15000"
   },
   "author": "",
   "license": "ISC",
