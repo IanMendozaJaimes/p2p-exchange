@@ -517,7 +517,7 @@ describe('Escrow', async function () {
     }
 
     console.time('sleep')
-    await sleep(1700)
+    await sleep(2000)
     console.timeLog('sleep')
 
     await setParamsValue(true)
@@ -578,7 +578,7 @@ describe('Escrow', async function () {
     await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
 
     console.time('sleep2')
-    await sleep(1900)
+    await sleep(2000)
     console.timeLog('sleep2')
 
     console.log('create arbitrage')
@@ -635,7 +635,6 @@ describe('Escrow', async function () {
   it('Resolve seller', async function() {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
-    await seeds.token.transfer(seconduser, escrow, '1000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
     console.log('add, accept and pay offers')
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
@@ -655,7 +654,7 @@ describe('Escrow', async function () {
     }
 
     console.time('sleep3')
-    await sleep(1900)
+    await sleep(2000)
     console.timeLog('sleep3')
 
     console.log('create arbitrage')
@@ -714,6 +713,158 @@ describe('Escrow', async function () {
       "swap_balance": "1000.0000 SEEDS",
       "escrow_balance": "0.0000 SEEDS"
     })
+
+  })
+
+  it('Resolve buyer', async function() {
+    console.log('transafer tokens')
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+
+    console.log('add, accept and pay offers')
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+
+    try {
+      await contracts.escrow.resolvebuyer(1, { authorization: `${thirduser}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'arbitrage does not exist',
+        message: 'arbitrage does not exist (expected)',
+        throwError: true
+      })
+    }
+
+    console.time('sleep4')
+    await sleep(2000)
+    console.timeLog('sleep4')
+
+    console.log('create arbitrage')
+    await setParamsValue(true)
+    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+
+    try {
+      await contracts.escrow.resolvebuyer(1, { authorization: `${thirduser}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'arbitrage has not arbiter',
+        message: 'arbitrage has not arbiter (expected)',
+        throwError: true
+      })
+    }
+
+    console.log('create arbiter')
+    await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
+
+    console.log('add arbiter to arbitrage')
+    await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+
+    const accounts = await rpc.get_table_rows({
+      code: 'token.seeds',
+      scope: seconduser,
+      table: 'accounts',
+      json: true,
+      limit: 100
+    })
+
+    let balanceBeforeResolve = accounts.rows[0].balance
+
+    await contracts.escrow.resolvebuyer(1, { authorization: `${thirduser}@active` })
+
+    const offers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    let currBuyOffer = offers.rows.find(el => el.id === 1)
+    let succStatus = currBuyOffer.status_history.find(el => el.key === 'b.success')
+
+    assert.deepStrictEqual(currBuyOffer.current_status, 'b.success')
+    assert.notDeepStrictEqual(succStatus.value, 'b.success')
+
+    const arbitoffs = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'arbitoffs',
+      json: true,
+      limit: 100
+    })
+
+    delete arbitoffs.rows[0].created_date
+    delete arbitoffs.rows[0].resolution_date
+    assert.deepStrictEqual(arbitoffs.rows, [
+      {
+        "offer_id": 1,
+        "arbiter": "seedsuserccc",
+        "resolution": `${seconduser}`,
+        "notes": "",
+      }
+    ])
+
+    const balances = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'balances',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(balances.rows, [
+      {
+        "account": "seedsuseraaa",
+        "available_balance": "0.0000 SEEDS",
+        "swap_balance": "0.0000 SEEDS",
+        "escrow_balance": "0.0000 SEEDS"
+      }
+    ])
+
+    const accounts2 = await rpc.get_table_rows({
+      code: 'token.seeds',
+      scope: seconduser,
+      table: 'accounts',
+      json: true,
+      limit: 100
+    })
+
+    let balanceAfterResolve = accounts2.rows[0].balance
+    let amount = parseFloat(balanceBeforeResolve.split(' ')[0])
+    let totalAmount = (amount + 1000).toFixed(4)
+    assert.deepStrictEqual(balanceAfterResolve, `${totalAmount} SEEDS`)
+
+    const trxStats = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'trxstats',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(trxStats.rows, [
+      {
+        "account": "seedsuseraaa",
+        "total_trx": 0,
+        "sell_successful": 0,
+        "buy_successful": 0
+      },
+      {
+        "account": "seedsuserbbb",
+        "total_trx": 1,
+        "sell_successful": 0,
+        "buy_successful": 1
+      },
+      {
+        "account": "seedsuserccc",
+        "total_trx": 0,
+        "sell_successful": 0,
+        "buy_successful": 0
+      }
+    ])
 
   })
 })

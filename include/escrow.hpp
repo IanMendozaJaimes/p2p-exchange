@@ -54,7 +54,7 @@ CONTRACT escrow : public contract {
 
     ACTION resolvesellr(const uint64_t & offer_id);
 
-    // ACTION resolvebuyer(const uint64_t & offer_id);
+    ACTION resolvebuyer(const uint64_t & offer_id);
 
   private:
 
@@ -238,7 +238,7 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
           (addarbiter)(delarbiter)
           (initarbitrage)
           (arbtrgeoffer)
-          (resolvesellr)
+          (resolvesellr)(resolvebuyer)
         )
       }
   }
