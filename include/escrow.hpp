@@ -71,6 +71,10 @@ CONTRACT escrow : public contract {
     const name buy_offer_status_confirmed = name("b.confirmd");
     const name buy_offer_status_successful = name("b.success");
     const name buy_offer_status_arbitrage = name("b.arbitrage");
+    const name buy_offer_status_flagged = name("b.flagged");
+
+    const name arbitrage_status_pending = name("pending");
+    const name arbitrage_status_inprogress = name("inprogress");
 
     DEFINE_CONFIG_TABLE
     DEFINE_CONFIG_GET

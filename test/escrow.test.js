@@ -666,8 +666,8 @@ describe('Escrow', async function () {
     } catch (error) {
       assertError({
         error,
-        textInside: 'arbitrage has not arbiter',
-        message: 'arbitrage has not arbiter (expected)',
+        textInside: 'this arbitration ticket does not have an arbiter yet',
+        message: 'this arbitration ticket does not have an arbiter yet (expected)',
         throwError: true
       })
     }
@@ -709,11 +709,24 @@ describe('Escrow', async function () {
 
     assert.deepStrictEqual(balances.rows[0],   {
       "account": "seedsuseraaa",
-      "available_balance": "0.0000 SEEDS",
-      "swap_balance": "1000.0000 SEEDS",
+      "available_balance": "1000.0000 SEEDS",
+      "swap_balance": "0.0000 SEEDS",
       "escrow_balance": "0.0000 SEEDS"
     })
 
+    const offers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    let currBuyOff = offers.rows[1]
+    let flaggedStatus = currBuyOff.status_history.find(el => el.key === 'b.flagged')
+
+    assert.deepStrictEqual(currBuyOff.current_status, 'b.flagged')
+    assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
 
   it('Resolve buyer', async function() {
@@ -750,8 +763,8 @@ describe('Escrow', async function () {
     } catch (error) {
       assertError({
         error,
-        textInside: 'arbitrage has not arbiter',
-        message: 'arbitrage has not arbiter (expected)',
+        textInside: 'this arbitration ticket does not have an arbiter yet',
+        message: 'this arbitration ticket does not have an arbiter yet (expected)',
         throwError: true
       })
     }
@@ -762,15 +775,17 @@ describe('Escrow', async function () {
     console.log('add arbiter to arbitrage')
     await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
 
-    const accounts = await rpc.get_table_rows({
-      code: 'token.seeds',
-      scope: seconduser,
-      table: 'accounts',
-      json: true,
-      limit: 100
-    })
+    // const accounts = await rpc.get_table_rows({
+    //   code: 'token.seeds',
+    //   scope: seconduser,
+    //   table: 'accounts',
+    //   json: true,
+    //   limit: 100
+    // })
 
-    let balanceBeforeResolve = accounts.rows[0].balance
+    // let balanceBeforeResolve = accounts.rows[0].balance
+
+    const firstuserBalanceBefore = await getAccountBalance(seedsContracts.token, seconduser, seedsSymbol)
 
     await contracts.escrow.resolvebuyer(1, "Resolved to buyer", { authorization: `${thirduser}@active` })
 
@@ -824,18 +839,9 @@ describe('Escrow', async function () {
       }
     ])
 
-    const accounts2 = await rpc.get_table_rows({
-      code: 'token.seeds',
-      scope: seconduser,
-      table: 'accounts',
-      json: true,
-      limit: 100
-    })
+    const firstuserBalanceAfter = await getAccountBalance(seedsContracts.token, seconduser, seedsSymbol)
 
-    let balanceAfterResolve = accounts2.rows[0].balance
-    let amount = parseFloat(balanceBeforeResolve.split(' ')[0])
-    let totalAmount = (amount + 1000).toFixed(4)
-    assert.deepStrictEqual(balanceAfterResolve, `${totalAmount} SEEDS`)
+    assert.deepStrictEqual(firstuserBalanceAfter - firstuserBalanceBefore, 1000.0)
 
     const trxStats = await rpc.get_table_rows({
       code: escrow,
