@@ -541,7 +541,7 @@ void escrow::arbtrgeoffer(const name & arbiter, const uint64_t & offer_id)
   });
 }
 
-void escrow::resolvesellr(const uint64_t & offer_id)
+void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
 {
   arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
 
@@ -569,6 +569,7 @@ void escrow::resolvesellr(const uint64_t & offer_id)
 
   arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage) {
     arbitrage.resolution = seller;
+    arbitrage.notes = notes;
   });
 
   balances_t.modify(bitr, _self, [&](auto & balance) {
@@ -579,7 +580,7 @@ void escrow::resolvesellr(const uint64_t & offer_id)
   // Penalize buyer - pending
 }
 
-void escrow::resolvebuyer(const uint64_t & offer_id)
+void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes)
 {
   arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
 
@@ -610,6 +611,7 @@ void escrow::resolvebuyer(const uint64_t & offer_id)
 
   arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage) {
     arbitrage.resolution = buyer;
+    arbitrage.notes = notes;
   });
 
   balances_t.modify(bitr, _self, [&](auto & balance) {

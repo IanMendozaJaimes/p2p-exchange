@@ -643,7 +643,7 @@ describe('Escrow', async function () {
     await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
 
     try {
-      await contracts.escrow.resolvesellr(1, { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -662,7 +662,7 @@ describe('Escrow', async function () {
     await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
 
     try {
-      await contracts.escrow.resolvesellr(1, { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -678,7 +678,7 @@ describe('Escrow', async function () {
     console.log('add arbiter to arbitrage')
     await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
 
-    await contracts.escrow.resolvesellr(1, { authorization: `${thirduser}@active` })
+    await contracts.escrow.resolvesellr(1, "Resolved to seller", { authorization: `${thirduser}@active` })
 
     const arbitoffs = await rpc.get_table_rows({
       code: escrow,
@@ -695,7 +695,7 @@ describe('Escrow', async function () {
         "offer_id": 1,
         "arbiter": "seedsuserccc",
         "resolution": `${firstuser}`,
-        "notes": "",
+        "notes": "Resolved to seller",
       }
     ])
 
@@ -727,7 +727,7 @@ describe('Escrow', async function () {
     await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
 
     try {
-      await contracts.escrow.resolvebuyer(1, { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvebuyer(1, "", { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -746,7 +746,7 @@ describe('Escrow', async function () {
     await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
 
     try {
-      await contracts.escrow.resolvebuyer(1, { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvebuyer(1, "", { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -772,7 +772,7 @@ describe('Escrow', async function () {
 
     let balanceBeforeResolve = accounts.rows[0].balance
 
-    await contracts.escrow.resolvebuyer(1, { authorization: `${thirduser}@active` })
+    await contracts.escrow.resolvebuyer(1, "Resolved to buyer", { authorization: `${thirduser}@active` })
 
     const offers = await rpc.get_table_rows({
       code: escrow,
@@ -803,7 +803,7 @@ describe('Escrow', async function () {
         "offer_id": 1,
         "arbiter": "seedsuserccc",
         "resolution": `${seconduser}`,
-        "notes": "",
+        "notes": "Resolved to buyer",
       }
     ])
 

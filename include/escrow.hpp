@@ -52,9 +52,9 @@ CONTRACT escrow : public contract {
 
     ACTION arbtrgeoffer(const name & arbiter, const uint64_t & offer_id);
 
-    ACTION resolvesellr(const uint64_t & offer_id);
+    ACTION resolvesellr(const uint64_t & offer_id, const string & notes);
 
-    ACTION resolvebuyer(const uint64_t & offer_id);
+    ACTION resolvebuyer(const uint64_t & offer_id, const string & notes);
 
   private:
 
