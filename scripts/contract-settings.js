@@ -7,7 +7,6 @@ const { settings } = contractNames
 async function setParamsValue (test = false) {
   if (test) params = testparams
   const keys = Object.keys(params)
-  // console.log(params)
 
   for (const key of keys) {
     await transact({
