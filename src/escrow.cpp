@@ -567,13 +567,29 @@ void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
   auto bitr = balances_t.find(seller.value);
   check(bitr != balances_t.end(), "balance not found");
 
+  buy_sell_relation_tables buysellrel_t(get_self(), get_self().value);
+
+  auto buysellrel_by_buy = buysellrel_t.get_index<name("bybuy")>();
+  auto bsritr = buysellrel_by_buy.get(offer_id, "buy offer id relation not found");
+
+  auto sitr = offers_t.find(bsritr.sell_offer_id);
+  check(sitr != offers_t.end(), "sell offer not found");
+
+  asset available = sitr->quantity_info.find(name("available"))->second;
+  asset totaloffered = sitr->quantity_info.find(name("totaloffered"))->second;
+
+  offers_t.modify(sitr, _self, [&](auto & selloffer) {
+    selloffer.quantity_info.at(name("available")) = available + quantity;
+    selloffer.quantity_info.at(name("totaloffered")) = totaloffered - quantity;
+  });
+
   arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage) {
     arbitrage.resolution = seller;
     arbitrage.notes = notes;
   });
 
   balances_t.modify(bitr, _self, [&](auto & balance) {
-    balance.available_balance += quantity;
+    balance.swap_balance += quantity;
     balance.escrow_balance -= quantity;
   });
 

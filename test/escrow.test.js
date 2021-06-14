@@ -678,6 +678,19 @@ describe('Escrow', async function () {
     console.log('add arbiter to arbitrage')
     await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
 
+    const offersB = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    let currSellOffBefore = offersB.rows[0]
+
+    let availabeBefore = currSellOffBefore.quantity_info.find(el => el.key === 'available').value
+    let totalOfferedBefore = currSellOffBefore.quantity_info.find(el => el.key === 'totaloffered').value
+
     await contracts.escrow.resolvesellr(1, "Resolved to seller", { authorization: `${thirduser}@active` })
 
     const arbitoffs = await rpc.get_table_rows({
@@ -709,8 +722,8 @@ describe('Escrow', async function () {
 
     assert.deepStrictEqual(balances.rows[0],   {
       "account": "seedsuseraaa",
-      "available_balance": "1000.0000 SEEDS",
-      "swap_balance": "0.0000 SEEDS",
+      "available_balance": "0.0000 SEEDS",
+      "swap_balance": "1000.0000 SEEDS",
       "escrow_balance": "0.0000 SEEDS"
     })
 
@@ -723,8 +736,16 @@ describe('Escrow', async function () {
     })
 
     let currBuyOff = offers.rows[1]
+    let currSellOff = offers.rows[0]
     let flaggedStatus = currBuyOff.status_history.find(el => el.key === 'b.flagged')
 
+    let availabeQuantity = currSellOff.quantity_info.find(el => el.key === 'available').value
+    let totalOffered = currSellOff.quantity_info.find(el => el.key === 'totaloffered').value
+
+    assert.deepStrictEqual(availabeBefore, '0.0000 SEEDS')
+    assert.deepStrictEqual(totalOfferedBefore, '1000.0000 SEEDS')
+    assert.deepStrictEqual(availabeQuantity, '1000.0000 SEEDS')
+    assert.deepStrictEqual(totalOffered, '0.0000 SEEDS')
     assert.deepStrictEqual(currBuyOff.current_status, 'b.flagged')
     assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
@@ -774,16 +795,6 @@ describe('Escrow', async function () {
 
     console.log('add arbiter to arbitrage')
     await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
-
-    // const accounts = await rpc.get_table_rows({
-    //   code: 'token.seeds',
-    //   scope: seconduser,
-    //   table: 'accounts',
-    //   json: true,
-    //   limit: 100
-    // })
-
-    // let balanceBeforeResolve = accounts.rows[0].balance
 
     const firstuserBalanceBefore = await getAccountBalance(seedsContracts.token, seconduser, seedsSymbol)
 
@@ -871,6 +882,5 @@ describe('Escrow', async function () {
         "buy_successful": 0
       }
     ])
-
   })
 })
