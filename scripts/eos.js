@@ -17,7 +17,7 @@ const getChainInfo = () => {
       }
     case 'telosTestnet':
       return {
-        keyProvider: [process.env.TESTNET_PRIVATE_KEY],
+        keyProvider: [process.env.TESTNET_PRIVATE_KEY, process.env.TESTNET_TESTUSER_1, process.env.TESTNET_TESTUSER_2],
         httpEndpoint: 'https://testnet.telos.caleos.io'
       }
     case 'telosMainnet':

@@ -2,6 +2,7 @@
 #include <eosio/eosio.hpp>
 #include <eosio/system.hpp>
 #include <eosio/singleton.hpp>
+#include <eosio/crypto.hpp>
 #include <contracts.hpp>
 #include <tables/users.hpp>
 #include <tables/seeds.prices.hpp>
@@ -49,6 +50,10 @@ CONTRACT escrow : public contract {
     ACTION delarbiter(const name & account);
 
     ACTION initarbitrage(const uint64_t & buy_offer_id);
+
+    ACTION send(const name & from, const name & to, const string & iv, const public_key & ephem_key, const string & message, const checksum256 & mac);
+
+    ACTION delprivtemsg(const uint64_t & message_id);
 
   private:
 
@@ -215,6 +220,24 @@ CONTRACT escrow : public contract {
     > arbitrage_tables;
 
     typedef singleton<"price"_n, price_table> price_tables;
+
+    TABLE private_message_table {
+      uint64_t id;
+      name sender;
+      name receiver;
+      string iv;
+      public_key ephem_key;
+      string message;
+      checksum256 mac;
+
+      EOSLIB_SERIALIZE(private_message_table, (id)(sender)(receiver)(iv)(ephem_key)(message)(mac))
+
+      auto primary_key()const { return id; }
+    };
+
+    typedef eosio::multi_index<name("privatemsgs"), private_message_table> private_message_tables;
+
+
 };
 
 extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
@@ -231,6 +254,7 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
           (accptbuyoffr)(payoffer)(confrmpaymnt)
           (addarbiter)(delarbiter)
           (initarbitrage)
+          (send)(delprivtemsg)
         )
       }
   }

@@ -22,10 +22,12 @@
   "homepage": "https://github.com/IanMendozaJaimes/p2p-exchange#readme",
   "dependencies": {
     "dotenv": "^8.2.0",
+    "elliptic": "^6.5.4",
     "eosjs": "^21.0.3",
     "node-fetch": "^2.6.1",
     "promisify": "^0.0.3",
-    "prompt-sync": "^4.2.0"
+    "prompt-sync": "^4.2.0",
+    "sha.js": "^2.4.9"
   },
   "devDependencies": {
     "mocha": "^8.3.2"

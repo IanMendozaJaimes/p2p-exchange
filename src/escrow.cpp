@@ -520,3 +520,34 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
   });
 
 }
+
+ACTION escrow::send(const name & from, const name & to, const string & iv, const public_key & ephem_key, const string & message, const checksum256 & mac)
+{
+  // for the moment, this action doesn't require auth
+  check(is_account(to), "to account does not exist");
+
+  private_message_tables msg_t(get_self(), get_self().value);
+
+  msg_t.emplace(_self, [&](auto & item) {
+    item.id = msg_t.available_primary_key();
+    item.sender = from;
+    item.receiver = to;
+    item.iv = iv;
+    item.ephem_key = ephem_key;
+    item.message = message;
+    item.mac = mac;
+  });  
+}
+
+ACTION escrow::delprivtemsg(const uint64_t & message_id)
+{
+  // for the moment, this action doesn't require auth
+
+  private_message_tables msg_t(get_self(), get_self().value);
+  auto mitr = msg_t.find(message_id);
+
+  if(mitr != msg_t.end())
+  {
+    msg_t.erase(mitr);
+  }
+}
