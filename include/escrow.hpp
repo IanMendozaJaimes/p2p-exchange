@@ -111,8 +111,8 @@ CONTRACT escrow : public contract {
       name fiat_currency;
 
       uint64_t primary_key () const { return id; }
-      uint64_t by_sell () const { return sell_id; }
       uint64_t by_date () const { return std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch(); }
+      uint128_t by_sell_id () const { return (uint128_t(sell_id) << 64) + id; }
       uint128_t by_type_id () const { return (uint128_t(type.value) << 64) + id; }
       uint128_t by_seller_id () const { return (uint128_t(seller.value) << 64) + id; }
       uint128_t by_seller_date () const { return (uint128_t(seller.value) << 64) + (std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch()); }
@@ -157,8 +157,8 @@ CONTRACT escrow : public contract {
       const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_timezone>>,
       indexed_by<name("byscurrency"),
       const_mem_fun<offer_table, uint128_t, &offer_table::by_current_status_currency>>,
-      indexed_by<name("bysell"),
-      const_mem_fun<offer_table, uint64_t, &offer_table::by_sell>>
+      indexed_by<name("bysellid"),
+      const_mem_fun<offer_table, uint128_t, &offer_table::by_sell_id>>
     > offer_tables;
 
     TABLE buy_sell_relation_table {
