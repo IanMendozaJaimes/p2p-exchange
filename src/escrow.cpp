@@ -193,7 +193,9 @@ ACTION escrow::addselloffer(const name & seller, const asset & total_offered, co
   offer_tables offers_t(get_self(), get_self().value);
 
   offers_t.emplace(_self, [&](auto & offer){
-    offer.id = offers_t.available_primary_key();
+    uint64_t new_id = offers_t.available_primary_key();
+    offer.id = new_id;
+    offer.sell_id = new_id;
     offer.seller = seller;
     offer.buyer = name("");
     offer.type = offer_type_sell;
@@ -272,6 +274,7 @@ ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, c
 
   offers_t.emplace(_self, [&](auto & offer){
     offer.id = id;
+    offer.sell_id = sell_offer_id;
     offer.seller = sitr.seller;
     offer.buyer = buyer;
     offer.type = offer_type_buy;
