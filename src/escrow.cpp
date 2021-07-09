@@ -511,8 +511,8 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
 
   arbitrage_offers_t.emplace(_self, [&](auto & arbitrage){
     arbitrage.offer_id = buy_offer_id;
-    arbitrage.arbiter = name("pending");;
-    arbitrage.resolution = name("pending");
+    arbitrage.arbiter = arbitrage_status_pending;
+    arbitrage.resolution = arbitrage_status_pending;
     arbitrage.notes = "";
     arbitrage.created_date = current_time_point();
   });
@@ -521,5 +521,132 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_arbitrage, current_time_point()));
     buyoffer.current_status = buy_offer_status_arbitrage;
   });
+}
 
+void escrow::arbtrgeoffer(const name & arbiter, const uint64_t & offer_id)
+{
+  user_tables users_t(get_self(), get_self().value);
+
+  auto uitr = users_t.find(arbiter.value);
+  check(uitr != users_t.end(), "user not found");
+  check(uitr->is_arbiter == 1, "user is not arbiter");
+
+  require_auth(arbiter);
+
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
+
+  auto aritr = arbitrage_offers_t.find(offer_id);
+  check(aritr != arbitrage_offers_t.end(), "arbitrage does not exist");
+
+  arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage){
+    arbitrage.resolution = arbitrage_status_inprogress;
+    arbitrage.arbiter = arbiter;
+  });
+}
+
+void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
+{
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
+
+  auto aritr = arbitrage_offers_t.find(offer_id);
+  check(aritr != arbitrage_offers_t.end(), "arbitrage does not exist");
+  check(aritr->resolution == arbitrage_status_inprogress, "this arbitration ticket does not have an arbiter yet");
+
+  name arbiter = aritr->arbiter;
+  require_auth(arbiter);
+
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.find(offer_id);
+  check(boitr != offers_t.end(), "buy offer not found");
+  check(boitr->type == offer_type_buy, "offer is not a buy offer");
+  check(boitr->current_status == buy_offer_status_arbitrage, "offer is not under arbitration");
+
+  asset quantity = boitr->quantity_info.find(name("buyquantity"))->second;
+  name seller = boitr->seller;
+
+  balances_tables balances_t(get_self(), get_self().value);
+
+  auto bitr = balances_t.find(seller.value);
+  check(bitr != balances_t.end(), "balance not found");
+
+  buy_sell_relation_tables buysellrel_t(get_self(), get_self().value);
+
+  auto buysellrel_by_buy = buysellrel_t.get_index<name("bybuy")>();
+  auto bsritr = buysellrel_by_buy.get(offer_id, "buy offer id relation not found");
+
+  auto sitr = offers_t.find(bsritr.sell_offer_id);
+  check(sitr != offers_t.end(), "sell offer not found");
+
+  asset available = sitr->quantity_info.find(name("available"))->second;
+  asset totaloffered = sitr->quantity_info.find(name("totaloffered"))->second;
+
+  offers_t.modify(sitr, _self, [&](auto & selloffer) {
+    selloffer.quantity_info.at(name("available")) = available + quantity;
+    selloffer.quantity_info.at(name("totaloffered")) = totaloffered - quantity;
+  });
+
+  arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage) {
+    arbitrage.resolution = seller;
+    arbitrage.notes = notes;
+  });
+
+  balances_t.modify(bitr, _self, [&](auto & balance) {
+    balance.swap_balance += quantity;
+    balance.escrow_balance -= quantity;
+  });
+
+  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+    buyoffer.status_history.insert(std::make_pair(buy_offer_status_flagged, current_time_point()));
+    buyoffer.current_status = buy_offer_status_flagged;
+  });
+
+  // Penalize buyer - pending
+}
+
+void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes)
+{
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
+
+  auto aritr = arbitrage_offers_t.find(offer_id);
+  check(aritr != arbitrage_offers_t.end(), "arbitrage does not exist");
+  check(aritr->resolution == arbitrage_status_inprogress, "this arbitration ticket does not have an arbiter yet");
+
+  name arbiter = aritr->arbiter;
+  require_auth(arbiter);
+
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.find(offer_id);
+  check(boitr != offers_t.end(), "buy offer not found");
+  check(boitr->type == offer_type_buy, "offer is not a buy offer");
+  check(boitr->current_status == buy_offer_status_arbitrage, "offer is not under arbitration");
+
+  name buyer = boitr->buyer;
+  name seller = boitr->seller;
+  asset quantity = boitr->quantity_info.find(name("buyquantity"))->second;
+
+  balances_tables balances_t(get_self(), get_self().value);
+
+  auto bitr = balances_t.find(seller.value);
+  check(bitr != balances_t.end(), "balance not found");
+
+  send_transfer(boitr->buyer, quantity, std::string("SEEDS bought from " + seller.to_string()));
+
+  arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage) {
+    arbitrage.resolution = buyer;
+    arbitrage.notes = notes;
+  });
+
+  balances_t.modify(bitr, _self, [&](auto & balance) {
+    balance.escrow_balance -= quantity;
+  });
+
+  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+    buyoffer.status_history.insert(std::make_pair(buy_offer_status_successful, current_time_point()));
+    buyoffer.current_status = buy_offer_status_successful;
+  });
+
+  add_success_transaction(buyer, offer_type_buy);
+  // Penalize seller - pending
 }

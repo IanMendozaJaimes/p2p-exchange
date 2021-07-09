@@ -50,6 +50,12 @@ CONTRACT escrow : public contract {
 
     ACTION initarbitrage(const uint64_t & buy_offer_id);
 
+    ACTION arbtrgeoffer(const name & arbiter, const uint64_t & offer_id);
+
+    ACTION resolvesellr(const uint64_t & offer_id, const string & notes);
+
+    ACTION resolvebuyer(const uint64_t & offer_id, const string & notes);
+
   private:
 
     const name offer_type_sell = name("offer.sell");
@@ -65,6 +71,10 @@ CONTRACT escrow : public contract {
     const name buy_offer_status_confirmed = name("b.confirmd");
     const name buy_offer_status_successful = name("b.success");
     const name buy_offer_status_arbitrage = name("b.arbitrage");
+    const name buy_offer_status_flagged = name("b.flagged");
+
+    const name arbitrage_status_pending = name("pending");
+    const name arbitrage_status_inprogress = name("inprogress");
 
     DEFINE_CONFIG_TABLE
     DEFINE_CONFIG_GET
@@ -121,13 +131,13 @@ CONTRACT escrow : public contract {
       uint128_t by_current_status_buyer () const { return (uint128_t(current_status.value) << 64) + buyer.value; }
       uint128_t by_current_status_id () const { return (uint128_t(current_status.value) << 64) + id; }
       uint128_t by_current_status_date () const { return (uint128_t(current_status.value) << 64) + (std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch()); }
-      uint128_t by_current_status_timezone () const { 
+      uint128_t by_current_status_timezone () const {
         uint128_t index_high = (uint128_t(current_status.value) << 64) + (uint128_t(time_zone.value << 64));
-        return index_high + id; 
+        return index_high + id;
       }
-      uint128_t by_current_status_currency () const { 
+      uint128_t by_current_status_currency () const {
         uint128_t index_high = (uint128_t(current_status.value) << 64) + (uint128_t(fiat_currency.value << 64));
-        return index_high + id; 
+        return index_high + id;
       }
       uint128_t by_sell_id () const { return (uint128_t(sell_id) << 64) + id; }
     };
@@ -235,6 +245,8 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
           (accptbuyoffr)(payoffer)(confrmpaymnt)
           (addarbiter)(delarbiter)
           (initarbitrage)
+          (arbtrgeoffer)
+          (resolvesellr)(resolvebuyer)
         )
       }
   }
