@@ -112,7 +112,6 @@ CONTRACT escrow : public contract {
 
       uint64_t primary_key () const { return id; }
       uint64_t by_date () const { return std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch(); }
-      uint128_t by_sell_id () const { return (uint128_t(sell_id) << 64) + id; }
       uint128_t by_type_id () const { return (uint128_t(type.value) << 64) + id; }
       uint128_t by_seller_id () const { return (uint128_t(seller.value) << 64) + id; }
       uint128_t by_seller_date () const { return (uint128_t(seller.value) << 64) + (std::numeric_limits<uint64_t>::max() - created_date.sec_since_epoch()); }
@@ -130,6 +129,7 @@ CONTRACT escrow : public contract {
         uint128_t index_high = (uint128_t(current_status.value) << 64) + (uint128_t(fiat_currency.value << 64));
         return index_high + id; 
       }
+      uint128_t by_sell_id () const { return (uint128_t(sell_id) << 64) + id; }
     };
 
     typedef eosio::multi_index<name("offers"), offer_table,
