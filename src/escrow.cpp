@@ -369,7 +369,7 @@ ACTION escrow::accptbuyoffr(const uint64_t & buy_offer_id)
     balance.escrow_balance += quantity;
   });
 }
-
+/*-----------------------------------------------------------------------------------------------------------*/
 ACTION escrow::rejctbuyoffr (const uint64_t & buy_offer_id) 
 {
   offer_tables offers_t(get_self(), get_self().value); 
@@ -385,7 +385,6 @@ ACTION escrow::rejctbuyoffr (const uint64_t & buy_offer_id)
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_rejected, current_time_point()));
     buyoffer.current_status = buy_offer_status_rejected;
   });
-
 } 
 
 ACTION escrow::payoffer(const uint64_t & buy_offer_id)
