@@ -10,7 +10,7 @@ const { escrow } = contractNames
 const { firstuser, seconduser, thirduser, fourthuser } = seedsAccounts
 
 describe('Escrow', async function () {
-
+  // this.timeout(5000);
   let contracts
   let seeds
   let seedsUsers
