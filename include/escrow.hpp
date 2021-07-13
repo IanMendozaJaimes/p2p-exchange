@@ -40,6 +40,8 @@ CONTRACT escrow : public contract {
 
     ACTION accptbuyoffr(const uint64_t & buy_offer_id);
 
+    ACTION rejctbuyoffr(const uint64_t & buy_offer_id);
+
     ACTION payoffer(const uint64_t & buy_offer_id);
 
     ACTION confrmpaymnt(const uint64_t & buy_offer_id);
@@ -69,6 +71,7 @@ CONTRACT escrow : public contract {
     const name buy_offer_status_accepted = name("b.accepted");
     const name buy_offer_status_paid = name("b.paid");
     const name buy_offer_status_confirmed = name("b.confirmd");
+    const name buy_offer_status_rejected = name("b.rejected");
     const name buy_offer_status_successful = name("b.success");
     const name buy_offer_status_arbitrage = name("b.arbitrage");
     const name buy_offer_status_flagged = name("b.flagged");
@@ -242,7 +245,7 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
           (upsertuser)
           (addselloffer)(cancelsoffer)
           (addbuyoffer)(delbuyoffer)
-          (accptbuyoffr)(payoffer)(confrmpaymnt)
+          (accptbuyoffr)(rejctbuyoffr)(payoffer)(confrmpaymnt)
           (addarbiter)(delarbiter)
           (initarbitrage)
           (arbtrgeoffer)
