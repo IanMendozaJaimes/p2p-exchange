@@ -369,15 +369,16 @@ ACTION escrow::accptbuyoffr(const uint64_t & buy_offer_id)
     balance.escrow_balance += quantity;
   });
 }
-/*-----------------------------------------------------------------------------------------------------------*/
-ACTION escrow::rejctbuyoffr (const uint64_t & buy_offer_id) 
+
+ACTION escrow::rejctbuyoffr(const uint64_t & buy_offer_id) 
 {
+
   offer_tables offers_t(get_self(), get_self().value); 
 
   auto boitr = offers_t.find(buy_offer_id);
   check(boitr != offers_t.end(), "buy offer not found");
   check(boitr->type == offer_type_buy, "offer is not a buy offer");
-  check(boitr->current_status == buy_offer_status_accepted, "can not reject this buy offer, it's status is not accepted");
+  check(boitr->current_status == buy_offer_status_pending, "can not reject this buy offer, it's status is not pending");
 
   require_auth(boitr->seller);
   
@@ -385,6 +386,7 @@ ACTION escrow::rejctbuyoffr (const uint64_t & buy_offer_id)
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_rejected, current_time_point()));
     buyoffer.current_status = buy_offer_status_rejected;
   });
+
 } 
 
 ACTION escrow::payoffer(const uint64_t & buy_offer_id)
