@@ -377,6 +377,17 @@ describe('Escrow', async function () {
       })
     }
 
+
+    const sellOffers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    console.log(JSON.stringify(sellOffers, null, 2))
+
     assert.deepStrictEqual(onlyEnoughFoundsInSaleOffer, true)
     assert.deepStrictEqual(onlyIfOfferExists, true)
     assert.deepStrictEqual(minOffer, true)
