@@ -357,6 +357,11 @@ ACTION escrow::accptbuyoffr(const uint64_t & buy_offer_id)
 
   offers_t.modify(sitr, _self, [&](auto & selloffer){
     selloffer.quantity_info.at(name("available")) = available - quantity;
+    available = selloffer.quantity_info.at(name("available"));
+    if(available.amount == 0) {
+      selloffer.current_status = sell_offer_status_soldout;
+      selloffer.status_history.insert(std::make_pair(sell_offer_status_soldout, current_time_point()));
+    }
   });
 
   balances_tables balances_t(get_self(), get_self().value);

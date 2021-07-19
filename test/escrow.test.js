@@ -377,7 +377,17 @@ describe('Escrow', async function () {
         throwError: true
       })
     }
+    // print table to see soldout status
+    const sellOffers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
 
+    console.log(JSON.stringify(sellOffers, null, 2))
+    
     /// reject buy offer
     console.log('Reject offer')
 
@@ -419,7 +429,6 @@ describe('Escrow', async function () {
         throwError: true
       })
     }
-
 
     assert.deepStrictEqual(onlyEnoughFoundsInSaleOffer, true)
     assert.deepStrictEqual(onlyIfOfferExists, true)
