@@ -55,12 +55,12 @@ const publicKeysByChain = {
 
 const contractsConfig = {
   [supportedChains.local]: [
-    contract('settings', 'm1sttgsp2pex'),
+    //contract('settings', 'm1sttgsp2pex'),
     contract('nullcontract', 'm1nullp2p'),
     contract('escrow', 'm1escrowp2px')
   ],
   [supportedChains.telosTestnet]: [
-    contract('settings', 'm1sttgsp2pex'),
+    // contract('settings', 'm1sttgsp2pex'),
     contract('escrow', 'm1escrowp2px')
   ],
   [supportedChains.telosMainnet]: [

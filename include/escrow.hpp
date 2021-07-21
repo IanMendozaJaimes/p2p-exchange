@@ -17,10 +17,14 @@ CONTRACT escrow : public contract {
     using contract::contract;
     escrow(name receiver, name code, datastream<const char*> ds)
       : contract(receiver, code, ds),
-        config(contracts::settings, contracts::settings.value)
+        config(receiver, receiver.value)
         {}
 
     ACTION reset();
+
+    ACTION setparam(name key, SettingsValues value, string description);
+
+    ACTION resetsttngs();
 
     ACTION resetoffers();
 
@@ -134,7 +138,7 @@ CONTRACT escrow : public contract {
       uint128_t by_current_status_timezone () const {
         uint128_t index_high = (uint128_t(current_status.value) << 64) + (uint128_t(time_zone.value << 64));
         return index_high + id;
-      }
+      } 
       uint128_t by_current_status_currency () const {
         uint128_t index_high = (uint128_t(current_status.value) << 64) + (uint128_t(fiat_currency.value << 64));
         return index_high + id;
@@ -246,7 +250,8 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
           (addarbiter)(delarbiter)
           (initarbitrage)
           (arbtrgeoffer)
-          (resolvesellr)(resolvebuyer)
+          (resolvesellr)(resolvebuyer)(setparam)
+          (resetsttngs)
         )
       }
   }

@@ -10,7 +10,7 @@ const { escrow } = contractNames
 const { firstuser, seconduser, thirduser, fourthuser } = seedsAccounts
 
 describe('Escrow', async function () {
-
+  this.timeout(50000);
   let contracts
   let seeds
   let seedsUsers
@@ -29,6 +29,7 @@ describe('Escrow', async function () {
   })
 
   beforeEach(async function () {
+    
     await contracts.escrow.reset({ authorization: `${escrow}@active` })
     await seeds.accounts.reset({ authorization: `${seedsContracts.accounts}@active` })
 
@@ -43,7 +44,7 @@ describe('Escrow', async function () {
     await contracts.escrow.upsertuser(seconduser, [{'key': 'signal', 'value': '987654321'}], [{'key': 'paypal', 'value': 'url2'}], 'gmt', 'mxn', { authorization: `${seconduser}@active` })
     await contracts.escrow.upsertuser(thirduser, [{'key': 'signal', 'value': '123456789'}], [{'key': 'paypal', 'value': 'url3'}], 'udt', 'eur', { authorization: `${thirduser}@active` })
   })
-
+  
   it('Transfer Seeds', async function () {
 
     console.log('deposit to the escrow contract')
@@ -883,4 +884,23 @@ describe('Escrow', async function () {
       }
     ])
   })
+
+  it('Settings, set a new param', async function () {
+    await contracts.escrow.setparam('testparam', ['uint64', 20], 'test param', { authorization: `${escrow}@active` })
+
+    const settingsParam = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'config',
+      json: true,
+      limit: 100
+    })
+
+    console.log(JSON.stringify(settingsParam, null, 2))
+  })
+
+  it('Reset settings', async function() {
+    await contracts.escrow.resetsttngs({ authorization: `${escrow}@active` })
+  })
+
 })
