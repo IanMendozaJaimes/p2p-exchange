@@ -205,6 +205,7 @@ describe('Escrow', async function () {
 
   })
 
+
   it('Buy offers', async function () {
 
     console.log('deposit to the escrow contract')
@@ -346,7 +347,8 @@ describe('Escrow', async function () {
       })
     }
 
-    console.log('pay offers')
+
+    console.log('Pay offers')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
     await contracts.escrow.addbuyoffer(seconduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
@@ -364,7 +366,6 @@ describe('Escrow', async function () {
       })
     }
 
-
     let onlyPayBuyOffers = true
     try {
       await contracts.escrow.payoffer(4, { authorization: `${seconduser}@active` })
@@ -374,6 +375,58 @@ describe('Escrow', async function () {
         error,
         textInside: 'can not pay the offer, the offer is not accepted',
         message: 'can not pay the offer, the offer is not accepted (expected)',
+        throwError: true
+      })
+    }
+    // print table to see soldout status
+    const sellOffers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    console.log(JSON.stringify(sellOffers, null, 2))
+    
+    /// reject buy offer
+    console.log('Reject offer')
+
+    let onlyRejectBySeller = true
+    try {
+      await contracts.escrow.rejctbuyoffr(4, { authorization: `${seconduser}@active` })
+      onlyRejectBySeller = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: `missing authority of ${firstuser}`,
+        message: `missing authority of ${firstuser} (expected)`,
+        throwError: true
+      })
+    }
+
+    let onlyRejectBuyOffers = true
+    try {
+      await contracts.escrow.rejctbuyoffr(3, { authorization: `${firstuser}@active` })
+      onlyRejectBuyOffers = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'offer is not a buy offer',
+        message: 'offer is not a buy offer (expected)',
+        throwError: true
+      })
+    }
+
+    let onlyRejectPendingBuyOffers = true
+    try {
+      await contracts.escrow.rejctbuyoffr(2, { authorization: `${firstuser}@active` })
+      onlyRejectPendingBuyOffers = false
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'can not reject this buy offer, it\'s status is not pending',
+        message: 'can not reject this buy offer, it\'s status is not pending (expected)',
         throwError: true
       })
     }
@@ -389,6 +442,9 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(onlyPending, true)
     assert.deepStrictEqual(onlyPayAccepted, true)
     assert.deepStrictEqual(onlyPayBuyOffers, true)
+    assert.deepStrictEqual(onlyRejectBySeller, true)
+    assert.deepStrictEqual(onlyRejectBuyOffers, true)
+    assert.deepStrictEqual(onlyRejectPendingBuyOffers, true)
   })
 
   it('Add arbiter', async function () {
@@ -606,7 +662,7 @@ describe('Escrow', async function () {
       assertError({
         error,
         textInside: `missing authority of ${thirduser}`,
-        message: ` missing authority of ${thirduser} (expected)`,
+        message: `missing authority of ${thirduser} (expected)`,
         throwError: true
       })
     }
