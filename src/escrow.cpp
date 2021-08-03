@@ -46,6 +46,21 @@ ACTION escrow::reset()
   {
     aritr = arbitrage_offers_t.erase(aritr);
   }
+
+  private_message_tables pmessages_t(get_self(), get_self().value);
+  auto pmitr = pmessages_t.begin();
+  while(pmitr != pmessages_t.end())
+  {
+    pmitr = pmessages_t.erase(pmitr);
+  }
+
+  user_public_key_tables public_t(get_self(), get_self().value);
+  auto pitr = public_t.begin();
+  while (pitr != public_t.end())
+  {
+    pitr = public_t.erase(pitr);
+  }
+  
 }
 
 ACTION escrow::resetoffers()
@@ -160,6 +175,28 @@ ACTION escrow::upsertuser(
       trxstats.total_trx = 0;
       trxstats.sell_successful = 0;
       trxstats.buy_successful = 0;
+    });
+  }
+}
+
+ACTION escrow::addpublickey(const name & account, const string & public_key)
+{
+  require_auth(account);
+
+  user_public_key_tables public_t(get_self(), get_self().value);
+  auto pitr = public_t.find(account.value);
+
+  if (pitr == public_t.end())
+  {
+    public_t.emplace(_self, [&](auto & item){
+      item.account = account;
+      item.public_key = public_key;
+    });
+  }
+  else
+  {
+    public_t.modify(pitr, _self, [&](auto & item){
+      item.public_key = public_key;
     });
   }
 }
@@ -671,4 +708,51 @@ void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes)
 
   add_success_transaction(buyer, offer_type_buy);
   // Penalize seller - pending
+}
+
+ACTION escrow::addoffermsg(
+  const uint64_t & buy_offer_id,
+  const string & iv, 
+  const string & ephem_key, 
+  const string & message, 
+  const checksum256 & mac
+)
+{
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.require_find(buy_offer_id, "buy offer not found");
+  check(boitr->type == offer_type_buy, "offer is not a buy offer");
+
+  name seller = boitr->seller;
+  name buyer = boitr->buyer;
+
+  name sender = has_auth(boitr->seller) ? boitr->seller : boitr->buyer;
+  name receiver = sender == boitr->seller ? boitr->buyer : boitr->seller;
+
+  require_auth(sender);
+  
+  private_message_tables msg_t(get_self(), get_self().value);
+
+  msg_t.emplace(_self, [&](auto & item) {
+    item.id = msg_t.available_primary_key();
+    item.buy_offer_id = buy_offer_id;
+    item.sender = sender;
+    item.receiver = receiver;
+    item.iv = iv;
+    item.ephem_key = ephem_key;
+    item.message = message;
+    item.mac = mac;
+  });
+}
+
+
+ACTION escrow::delprivtemsg(const uint64_t & message_id)
+{
+  private_message_tables msg_t(get_self(), get_self().value);
+  auto mitr = msg_t.require_find(message_id, "message not found");
+
+  name auth = has_auth(mitr->sender) ? mitr->sender : mitr->receiver;
+  require_auth(auth);
+
+  msg_t.erase(mitr);
 }
