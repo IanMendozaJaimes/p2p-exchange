@@ -62,6 +62,12 @@ CONTRACT escrow : public contract {
 
     ACTION resolvebuyer(const uint64_t & offer_id, const string & notes);
 
+    ACTION addoffermsg(const uint64_t & buy_offer_id, const string & iv, const string & ephem_key, const string & message, const checksum256 & mac);
+
+    ACTION delprivtemsg(const uint64_t & message_id);
+
+    ACTION addpublickey(const name & account, const string & public_key);
+
   private:
 
     const name offer_type_sell = name("offer.sell");
@@ -82,6 +88,9 @@ CONTRACT escrow : public contract {
 
     const name arbitrage_status_pending = name("pending");
     const name arbitrage_status_inprogress = name("inprogress");
+
+    void send_transfer(const name & beneficiary, const asset & quantity, const std::string & memo);
+    void add_success_transaction(const name & account, const name & trx_type);
 
     DEFINE_CONFIG_TABLE
     DEFINE_CONFIG_GET
@@ -209,8 +218,6 @@ CONTRACT escrow : public contract {
 
     config_tables config;
 
-    void send_transfer(const name & beneficiary, const asset & quantity, const std::string & memo);
-    void add_success_transaction(const name & account, const name & trx_type);
 
     TABLE arbitrage_offers_table {
       uint64_t offer_id;
@@ -236,6 +243,43 @@ CONTRACT escrow : public contract {
     > arbitrage_tables;
 
     typedef singleton<"price"_n, price_table> price_tables;
+
+    TABLE user_public_key_table {
+      name account;
+      string public_key;
+
+      uint64_t primary_key () const { return account.value; }
+    };
+
+    typedef eosio::multi_index<name("userspkeys"), user_public_key_table> user_public_key_tables;
+
+    TABLE private_message_table {
+      uint64_t id;
+      uint64_t buy_offer_id;
+      name sender;
+      name receiver;
+      string iv;
+      string ephem_key;
+      string message;
+      checksum256 mac;
+
+      EOSLIB_SERIALIZE(private_message_table, (id)(buy_offer_id)(sender)(receiver)(iv)(ephem_key)(message)(mac))
+      
+      uint64_t primary_key () const { return id; }
+      uint128_t by_buy_id () const { return (uint128_t(buy_offer_id) << 64) + id; }
+      uint128_t by_sender_id () const { return (uint128_t(sender.value) << 64) + id; }
+      uint128_t by_receiver_id () const { return (uint128_t(receiver.value) << 64) + id; }
+    };
+
+    typedef eosio::multi_index<name("pmessages"), private_message_table,
+      indexed_by<name("bybuyid"),
+      const_mem_fun<private_message_table, uint128_t, &private_message_table::by_buy_id>>,
+      indexed_by<name("bysenderid"),
+      const_mem_fun<private_message_table, uint128_t, &private_message_table::by_sender_id>>,
+      indexed_by<name("byreceiverid"),
+      const_mem_fun<private_message_table, uint128_t, &private_message_table::by_receiver_id>>
+    > private_message_tables;
+
 };
 
 extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
@@ -255,6 +299,7 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
           (arbtrgeoffer)
           (resolvesellr)(resolvebuyer)(setparam)
           (resetsttngs)
+          (addpublickey)(addoffermsg)(delprivtemsg)
         )
       }
   }
