@@ -82,6 +82,44 @@ ACTION escrow::resetoffers()
   }
 }
 
+ACTION escrow::resetsttngs()
+{
+
+  require_auth(get_self());
+  
+  auto citr = config.begin();
+  while (citr != config.end())
+  {
+    citr = config.erase(citr);
+  }
+}
+
+ACTION escrow::setparam(name key, SettingsValues value, string description)
+{
+  auto citr = config.find(key.value);
+  if (citr == config.end())
+  {
+    config.emplace(_self, [&](auto & item){
+      item.key = key;
+      item.value = value;
+      if (description.length() > 0)
+      {
+        item.description = description;
+      }
+    });
+  }
+  else
+  {
+    config.modify(citr, _self, [&](auto & item){
+      item.value = value;
+      if (description.length() > 0)
+      {
+        item.description = description;
+      }
+    });
+  }
+}
+
 ACTION escrow::deposit(const name & from, const name & to, const asset & quantity, const std::string & memo)
 {
   if(get_first_receiver() == seeds::token && to == get_self() && from != get_self())

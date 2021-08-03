@@ -2,7 +2,7 @@ const { transact, rpc } = require('./eos')
 let params = require('./config/params.json')
 const testparams = require('./config/testparams.json')
 const { contractNames } = require('../scripts/config')
-const { settings } = contractNames
+const { escrow } = contractNames
 
 async function setParamsValue (test = false) {
   if (test) params = testparams
@@ -11,10 +11,10 @@ async function setParamsValue (test = false) {
   for (const key of keys) {
     await transact({
       actions: [{
-        account: settings,
+        account: escrow,
         name: 'setparam',
         authorization: [{
-          actor: settings,
+          actor: escrow,
           permission: 'active',
         }],
         data: {
@@ -28,8 +28,8 @@ async function setParamsValue (test = false) {
 
 async function getParams () {
   const res = await rpc.get_table_rows({
-    code: settings,
-    scope: settings,
+    code: escrow,
+    scope: escrow,
     table: 'config',
     json: true,
     limit: 200
