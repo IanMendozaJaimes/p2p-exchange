@@ -76,6 +76,7 @@ CONTRACT escrow : public contract {
     const name sell_offer_status_active = name("s.active");
     const name sell_offer_status_soldout = name("s.soldout");
     const name sell_offer_status_canceled = name("s.canceled");
+    const name sell_offer_status_finished = name("s.finished");
 
     const name buy_offer_status_pending = name("b.pending");
     const name buy_offer_status_accepted = name("b.accepted");
@@ -83,11 +84,12 @@ CONTRACT escrow : public contract {
     const name buy_offer_status_confirmed = name("b.confirmd");
     const name buy_offer_status_rejected = name("b.rejected");
     const name buy_offer_status_successful = name("b.success");
-    const name buy_offer_status_arbitrage = name("b.arbitrage");
     const name buy_offer_status_flagged = name("b.flagged");
 
-    const name arbitrage_status_pending = name("pending");
-    const name arbitrage_status_inprogress = name("inprogress");
+    const name arbitrage_pending = name("pending");
+    const name arbitrage_status_pending = name("a.pending");
+    const name arbitrage_status_inprogress = name("a.inprogress");
+    const name arbitrage_status_finished = name("a.finished");
 
     void send_transfer(const name & beneficiary, const asset & quantity, const std::string & memo);
     void add_success_transaction(const name & account, const name & trx_type);

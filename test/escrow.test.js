@@ -607,8 +607,8 @@ describe('Escrow', async function () {
       limit: 100
     })
 
-    assert.deepStrictEqual(offers.rows[1].status_history.find(el => el.key === 'b.arbitrage').key, 'b.arbitrage')
-    assert.deepStrictEqual(offers.rows[1].current_status, 'b.arbitrage')
+    assert.deepStrictEqual(offers.rows[1].status_history.find(el => el.key === 'a.pending').key, 'a.pending')
+    assert.deepStrictEqual(offers.rows[1].current_status, 'a.pending')
 
     delete arbitoffs.rows[0].created_date
     delete arbitoffs.rows[0].resolution_date
@@ -683,10 +683,28 @@ describe('Escrow', async function () {
       {
         "offer_id": 1,
         "arbiter": "seedsuserccc",
-        "resolution": "inprogress",
+        "resolution": "a.inprogress",
         "notes": ""
       }
     ])
+
+    const offers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    delete offers.rows[1].created_date
+
+    assert.deepStrictEqual(offers.rows[1].current_status, 'a.inprogress')
+
+    const inArbitrage = offers.rows[1].status_history.find(el => el.key === 'a.inprogress')
+
+    delete inArbitrage.value
+
+    assert.deepStrictEqual({ key: 'a.inprogress' }, inArbitrage)
   })
 
   it('Resolve seller', async function() {
