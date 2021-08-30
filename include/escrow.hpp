@@ -64,17 +64,19 @@ CONTRACT escrow : public contract {
     const name sell_offer_status_active = name("s.active");
     const name sell_offer_status_soldout = name("s.soldout");
     const name sell_offer_status_canceled = name("s.canceled");
+    const name sell_offer_status_finished = name("s.finished");
 
     const name buy_offer_status_pending = name("b.pending");
     const name buy_offer_status_accepted = name("b.accepted");
     const name buy_offer_status_paid = name("b.paid");
     const name buy_offer_status_confirmed = name("b.confirmd");
     const name buy_offer_status_successful = name("b.success");
-    const name buy_offer_status_arbitrage = name("b.arbitrage");
     const name buy_offer_status_flagged = name("b.flagged");
 
-    const name arbitrage_status_pending = name("pending");
-    const name arbitrage_status_inprogress = name("inprogress");
+    const name arbitrage_pending = name("pending");
+    const name arbitrage_status_pending = name("a.pending");
+    const name arbitrage_status_inprogress = name("a.inprogress");
+    const name arbitrage_status_finished = name("a.finished");
 
     DEFINE_CONFIG_TABLE
     DEFINE_CONFIG_GET

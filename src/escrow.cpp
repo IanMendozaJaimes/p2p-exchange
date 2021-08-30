@@ -493,8 +493,8 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
   name seller = boitr->seller;
   name buyer = boitr->buyer;
 
-  name actor = has_auth(seller) ? seller : buyer;
-  require_auth(actor);
+  name auth = has_auth(seller) ? seller : buyer;
+  require_auth(auth);
 
   auto paid_date = boitr->status_history.find(name("b.paid"))->second;
   uint64_t max_seller_time = config_get_uint64(name("b.confrm.lim"));
@@ -506,17 +506,17 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
   auto aritr = arbitrage_offers_t.find(buy_offer_id);
   check(aritr == arbitrage_offers_t.end(), "arbitrage already exists");
 
-  arbitrage_offers_t.emplace(_self, [&](auto & arbitrage){
+  arbitrage_offers_t.emplace(_self, [&](auto & arbitrage) {
     arbitrage.offer_id = buy_offer_id;
-    arbitrage.arbiter = arbitrage_status_pending;
-    arbitrage.resolution = arbitrage_status_pending;
+    arbitrage.arbiter = arbitrage_pending;
+    arbitrage.resolution = arbitrage_pending;
     arbitrage.notes = "";
     arbitrage.created_date = current_time_point();
   });
 
   offers_t.modify(boitr, _self, [&](auto & buyoffer){
-    buyoffer.status_history.insert(std::make_pair(buy_offer_status_arbitrage, current_time_point()));
-    buyoffer.current_status = buy_offer_status_arbitrage;
+    buyoffer.status_history.insert(std::make_pair(arbitrage_status_pending, current_time_point()));
+    buyoffer.current_status = arbitrage_status_pending;
   });
 }
 
@@ -535,9 +535,19 @@ void escrow::arbtrgeoffer(const name & arbiter, const uint64_t & offer_id)
   auto aritr = arbitrage_offers_t.find(offer_id);
   check(aritr != arbitrage_offers_t.end(), "arbitrage does not exist");
 
+  offer_tables offers_t(get_self(), get_self().value);
+  
+  auto boitr = offers_t.find(offer_id);
+  check(boitr != offers_t.end(), "offer does not exist");
+
   arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage){
     arbitrage.resolution = arbitrage_status_inprogress;
     arbitrage.arbiter = arbiter;
+  });
+
+  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+    buyoffer.status_history.insert(std::make_pair(arbitrage_status_inprogress, current_time_point()));
+    buyoffer.current_status = arbitrage_status_inprogress;
   });
 }
 
@@ -557,7 +567,7 @@ void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
   auto boitr = offers_t.find(offer_id);
   check(boitr != offers_t.end(), "buy offer not found");
   check(boitr->type == offer_type_buy, "offer is not a buy offer");
-  check(boitr->current_status == buy_offer_status_arbitrage, "offer is not under arbitration");
+  check(boitr->current_status == arbitrage_status_inprogress, "offer is not under arbitration");
 
   asset quantity = boitr->quantity_info.find(name("buyquantity"))->second;
   name seller = boitr->seller;
@@ -617,7 +627,7 @@ void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes)
   auto boitr = offers_t.find(offer_id);
   check(boitr != offers_t.end(), "buy offer not found");
   check(boitr->type == offer_type_buy, "offer is not a buy offer");
-  check(boitr->current_status == buy_offer_status_arbitrage, "offer is not under arbitration");
+  check(boitr->current_status == arbitrage_status_inprogress, "offer is not under arbitration");
 
   name buyer = boitr->buyer;
   name seller = boitr->seller;
