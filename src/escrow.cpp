@@ -506,6 +506,28 @@ ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id)
 
   send_transfer(boitr->buyer, quantity, std::string("SEEDS bought from " + seller.to_string()));
 
+  // ================================================================
+  // Set transaction as success if it is sold out and all offers are paid
+
+  // buy_sell_relation_tables buysellrel_t(get_self(), get_self().value);
+
+  // auto buysellrel_by_buy = buysellrel_t.get_index<name("bybuy")>();
+  // auto bsritr = buysellrel_by_buy.get(buy_offer_id, "buy offer id relation not found");
+
+  // auto soitr = offers_t.find(bsritr.sell_offer_id);
+  // check(soitr != offers_t.end(), "sell offer not found");
+
+  // // TODO - Check if all the buy offers are paid
+
+  // if (soitr->current_status == sell_offer_status_soldout) {
+  //   offers_t.modify(soitr, _self, [&](auto & selloffer){
+  //     selloffer.status_history.insert(std::make_pair(sell_offer_status_successful, current_time_point()));
+  //     selloffer.current_status = sell_offer_status_successful;
+  //   });
+  // }
+
+  // ================================================================
+
   offers_t.modify(boitr, _self, [&](auto & buyoffer){
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_successful, current_time_point()));
     buyoffer.current_status = buy_offer_status_successful;
@@ -803,4 +825,54 @@ ACTION escrow::delprivtemsg(const uint64_t & message_id)
   require_auth(auth);
 
   msg_t.erase(mitr);
+}
+
+ACTION escrow::sendconmethd (
+  const uint64_t & buy_offer_id,
+  const string & iv, 
+  const string & ephem_key, 
+  const string & message, 
+  const checksum256 & mac
+) {
+  offer_tables offers_t(get_self(), get_self().value);
+
+  auto boitr = offers_t.require_find(buy_offer_id, "buy offer not found");
+  check(boitr->type == offer_type_buy, "offer is not a buy offer");
+
+  name seller = boitr->seller;
+  name buyer = boitr->buyer;
+
+  name auth = has_auth(seller) ? seller : buyer;
+
+  require_auth(auth);
+
+  arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
+
+  auto aritr = arbitrage_offers_t.require_find(buy_offer_id, "arbitrage does not exist");
+
+  name arbiter = aritr->arbiter;
+
+  check(arbiter != arbitrage_pending, "Offer has not arbiter yet");
+
+  arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage) {
+    if (has_auth(seller)) {
+      arbitrage.seller_contact = true;
+    } else {
+     arbitrage.buyer_contact = true;
+    }
+  });
+
+  private_message_tables msg_t(get_self(), get_self().value);
+
+  msg_t.emplace(_self, [&](auto & item) {
+    item.id = msg_t.available_primary_key();
+    item.buy_offer_id = buy_offer_id;
+    item.sender = auth;
+    item.receiver = arbiter;
+    item.iv = iv;
+    item.ephem_key = ephem_key;
+    item.message = message;
+    item.mac = mac;
+  });
+
 }

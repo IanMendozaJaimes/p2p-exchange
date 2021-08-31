@@ -205,7 +205,6 @@ describe('Escrow', async function () {
 
   })
 
-
   it('Buy offers', async function () {
 
     console.log('deposit to the escrow contract')
@@ -959,6 +958,171 @@ describe('Escrow', async function () {
     ])
   })
 
+  it('Resolve seller', async function() {
+    console.log('transafer tokens')
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+
+    console.log('add, accept and pay offers')
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+
+    try {
+      await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'arbitrage does not exist',
+        message: 'arbitrage does not exist (expected)',
+        throwError: true
+      })
+    }
+
+    console.time('sleep3')
+    await sleep(2000)
+    console.timeLog('sleep3')
+
+    console.log('create arbitrage')
+    await setParamsValue(true)
+    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+
+    try {
+      await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
+    } catch (error) {
+      assertError({
+        error,
+        textInside: 'this arbitration ticket does not have an arbiter yet',
+        message: 'this arbitration ticket does not have an arbiter yet (expected)',
+        throwError: true
+      })
+    }
+
+    console.log('create arbiter')
+    await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
+
+    console.log('add arbiter to arbitrage')
+    await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+
+    const offersB = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    let currSellOffBefore = offersB.rows[0]
+
+    let availabeBefore = currSellOffBefore.quantity_info.find(el => el.key === 'available').value
+    let totalOfferedBefore = currSellOffBefore.quantity_info.find(el => el.key === 'totaloffered').value
+
+    await contracts.escrow.resolvesellr(1, "Resolved to seller", { authorization: `${thirduser}@active` })
+
+    const arbitoffs = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'arbitoffs',
+      json: true,
+      limit: 100
+    })
+
+    delete arbitoffs.rows[0].created_date
+    delete arbitoffs.rows[0].resolution_date
+    assert.deepStrictEqual(arbitoffs.rows, [
+      {
+        "offer_id": 1,
+        "arbiter": "seedsuserccc",
+        "resolution": `${firstuser}`,
+        "notes": "Resolved to seller",
+      }
+    ])
+
+    const balances = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'balances',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(balances.rows[0],   {
+      "account": "seedsuseraaa",
+      "available_balance": "0.0000 SEEDS",
+      "swap_balance": "1000.0000 SEEDS",
+      "escrow_balance": "0.0000 SEEDS"
+    })
+
+    const offers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    let currBuyOff = offers.rows[1]
+    let currSellOff = offers.rows[0]
+    let flaggedStatus = currBuyOff.status_history.find(el => el.key === 'b.flagged')
+
+    let availabeQuantity = currSellOff.quantity_info.find(el => el.key === 'available').value
+    let totalOffered = currSellOff.quantity_info.find(el => el.key === 'totaloffered').value
+
+    assert.deepStrictEqual(availabeBefore, '0.0000 SEEDS')
+    assert.deepStrictEqual(totalOfferedBefore, '1000.0000 SEEDS')
+    assert.deepStrictEqual(availabeQuantity, '1000.0000 SEEDS')
+    assert.deepStrictEqual(totalOffered, '0.0000 SEEDS')
+    assert.deepStrictEqual(currBuyOff.current_status, 'b.flagged')
+    assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
+  })
+
+  // it('On confirm payment and it is soldout => it should mark sell off as success', async function() {
+  //   console.log('transafer tokens')
+  //   await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+
+  //   console.log('add, accept and pay offers')
+  //   await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+  //   await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+  //   await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+
+  //   console.log('Confirm to sell half of offered seeds')
+  //   const offersTable1 = await rpc.get_table_rows({
+  //     code: escrow,
+  //     scope: escrow,
+  //     table: 'offers',
+  //     json: true,
+  //     limit: 100
+  //   })
+
+  //   assert.deepStrictEqual(offersTable1.rows[0].current_status, 's.active')
+
+  //   await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+  //   await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+
+  //   console.log('Confirm to sell half of offered seeds')
+  //   const offersTable2 = await rpc.get_table_rows({
+  //     code: escrow,
+  //     scope: escrow,
+  //     table: 'offers',
+  //     json: true,
+  //     limit: 100
+  //   })
+
+  //   assert.deepStrictEqual(offersTable2.rows[0].current_status, 's.soldout')
+
+  //   await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+  //   await contracts.escrow.confrmpaymnt(1, { authorization: `${firstuser}@active` })
+
+  //   const offersTable = await rpc.get_table_rows({
+  //     code: escrow,
+  //     scope: escrow,
+  //     table: 'offers',
+  //     json: true,
+  //     limit: 100
+  //   })
+
+  // })
+
   it('Settings, set a new param', async function () {
     await contracts.escrow.setparam('testparam', ['uint64', 20], 'test param', { authorization: `${escrow}@active` })
 
@@ -975,6 +1139,88 @@ describe('Escrow', async function () {
 
   it('Reset settings', async function() {
     await contracts.escrow.resetsttngs({ authorization: `${escrow}@active` })
+  })
+
+  it.only('Send contact methods to arbiter', async function() {
+    console.log('transafer tokens')
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+
+    console.log('add, accept and pay offers')
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+
+    console.log('Buyer don\'t confirm pay so seller init arbitrage')
+    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+
+    console.log('create arbiter')
+    await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
+
+    try {
+      await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', { authorization: `${firstuser}@active` })
+    } catch (error) {
+      assert.deepStrictEqual(error.message, 'assertion failure with message: Offer has not arbiter yet')
+    }
+
+    console.log('add arbiter to arbitrage')
+    await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+
+    console.log('seller send contact methods')
+    await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', { authorization: `${firstuser}@active` })
+
+    console.log('buyer send contact methods')
+    await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', { authorization: `${seconduser}@active` })
+
+    const arbitragesTable = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'arbitoffs',
+      json: true,
+      limit: 100
+    })
+
+    delete arbitragesTable.rows[0].created_date
+    delete arbitragesTable.rows[0].resolution_date
+
+    assert.deepStrictEqual(arbitragesTable.rows[0], {
+      "offer_id": 1,
+      "arbiter": thirduser,
+      "resolution": "a.inprogress",
+      "notes": "",
+      "buyer_contact": 1,
+      "seller_contact": 1
+    })
+
+    const messagesTable = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'pmessages',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(messagesTable.rows, [
+      {
+        id: 0,
+        buy_offer_id: 1,
+        sender: firstuser,
+        receiver: thirduser,
+        iv: '4251f90f2a58a4cf78bf70f95e4f772f',
+        ephem_key: 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v',
+        message: '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d',
+        mac: 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165'
+      },
+      {
+        id: 1,
+        buy_offer_id: 1,
+        sender: seconduser,
+        receiver: thirduser,
+        iv: '4251f90f2a58a4cf78bf70f95e4f772f',
+        ephem_key: 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v',
+        message: '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d',
+        mac: 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165'
+      }
+    ])
   })
 
 })

@@ -68,6 +68,8 @@ CONTRACT escrow : public contract {
 
     ACTION addpublickey(const name & account, const string & public_key);
 
+    ACTION sendconmethd(const uint64_t & buy_offer_id, const string & iv, const string & ephem_key, const string & message, const checksum256 & mac);
+
   private:
 
     const name offer_type_sell = name("offer.sell");
@@ -76,7 +78,7 @@ CONTRACT escrow : public contract {
     const name sell_offer_status_active = name("s.active");
     const name sell_offer_status_soldout = name("s.soldout");
     const name sell_offer_status_canceled = name("s.canceled");
-    const name sell_offer_status_finished = name("s.finished");
+    const name sell_offer_status_successful = name("s.successful"); // *
 
     const name buy_offer_status_pending = name("b.pending");
     const name buy_offer_status_accepted = name("b.accepted");
@@ -89,7 +91,7 @@ CONTRACT escrow : public contract {
     const name arbitrage_pending = name("pending");
     const name arbitrage_status_pending = name("a.pending");
     const name arbitrage_status_inprogress = name("a.inprogress");
-    const name arbitrage_status_finished = name("a.finished");
+    // const name arbitrage_status_finished = name("a.finished");
 
     void send_transfer(const name & beneficiary, const asset & quantity, const std::string & memo);
     void add_success_transaction(const name & account, const name & trx_type);
@@ -228,6 +230,8 @@ CONTRACT escrow : public contract {
       string notes;
       time_point created_date;
       time_point resolution_date;
+      bool buyer_contact;
+      bool seller_contact;
 
       uint64_t primary_key () const { return offer_id; }
       uint128_t by_created_date_id () const { return uint128_t(created_date.sec_since_epoch() << 64) + offer_id; }
@@ -302,6 +306,7 @@ extern "C" void apply(uint64_t receiver, uint64_t code, uint64_t action) {
           (resolvesellr)(resolvebuyer)(setparam)
           (resetsttngs)
           (addpublickey)(addoffermsg)(delprivtemsg)
+          (sendconmethd)
         )
       }
   }
