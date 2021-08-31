@@ -506,28 +506,6 @@ ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id)
 
   send_transfer(boitr->buyer, quantity, std::string("SEEDS bought from " + seller.to_string()));
 
-  // ================================================================
-  // Set transaction as success if it is sold out and all offers are paid
-
-  // buy_sell_relation_tables buysellrel_t(get_self(), get_self().value);
-
-  // auto buysellrel_by_buy = buysellrel_t.get_index<name("bybuy")>();
-  // auto bsritr = buysellrel_by_buy.get(buy_offer_id, "buy offer id relation not found");
-
-  // auto soitr = offers_t.find(bsritr.sell_offer_id);
-  // check(soitr != offers_t.end(), "sell offer not found");
-
-  // // TODO - Check if all the buy offers are paid
-
-  // if (soitr->current_status == sell_offer_status_soldout) {
-  //   offers_t.modify(soitr, _self, [&](auto & selloffer){
-  //     selloffer.status_history.insert(std::make_pair(sell_offer_status_successful, current_time_point()));
-  //     selloffer.current_status = sell_offer_status_successful;
-  //   });
-  // }
-
-  // ================================================================
-
   offers_t.modify(boitr, _self, [&](auto & buyoffer){
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_successful, current_time_point()));
     buyoffer.current_status = buy_offer_status_successful;
@@ -540,6 +518,8 @@ ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id)
   balances_t.modify(bitr, _self, [&](auto & balance){
     balance.escrow_balance -= quantity;
   });
+
+  check_sale_success(buy_offer_id);
 
   add_success_transaction(seller, offer_type_sell);
   add_success_transaction(buyer, offer_type_buy);
@@ -875,4 +855,40 @@ ACTION escrow::sendconmethd (
     item.mac = mac;
   });
 
+}
+
+void escrow::check_sale_success(const uint64_t & buy_offer_id) {
+  offer_tables offers_t(get_self(), get_self().value);
+  auto boitr = offers_t.require_find(buy_offer_id, "buy offer not found");
+
+  uint64_t sell_id = boitr->sell_id;
+
+  auto soitr = offers_t.find(sell_id);
+  check(soitr != offers_t.end(), "sell offer not found");
+
+  asset offered_quantity = soitr->quantity_info.find(name("totaloffered"))->second;
+
+  auto offers_by_sell = offers_t.get_index<name("bysellid")>();
+  auto boitr_sell = offers_by_sell.lower_bound(uint128_t(sell_id) << 64);
+
+  asset total_sold = asset(0, util::seeds_symbol);
+  while (boitr_sell != offers_by_sell.end()) {
+    
+    if (boitr_sell->type == offer_type_buy) {
+      if (boitr_sell->sell_id != sell_id) { break; }
+
+      asset quantity = boitr_sell->quantity_info.find(name("buyquantity"))->second;
+      if (boitr_sell->current_status == buy_offer_status_successful) total_sold += quantity;
+    }
+    boitr_sell++;
+  }
+
+  bool all_is_sold = total_sold.amount == offered_quantity.amount;
+
+  if (soitr->current_status == sell_offer_status_soldout && all_is_sold) {
+    offers_t.modify(soitr, _self, [&](auto & selloffer){
+      selloffer.status_history.insert(std::make_pair(sell_offer_status_successful, current_time_point()));
+      selloffer.current_status = sell_offer_status_successful;
+    });
+  }
 }

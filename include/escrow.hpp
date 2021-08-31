@@ -95,6 +95,7 @@ CONTRACT escrow : public contract {
 
     void send_transfer(const name & beneficiary, const asset & quantity, const std::string & memo);
     void add_success_transaction(const name & account, const name & trx_type);
+    void check_sale_success(const uint64_t & buy_offer_id);
 
     DEFINE_CONFIG_TABLE
     DEFINE_CONFIG_GET

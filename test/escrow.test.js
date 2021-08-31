@@ -1076,52 +1076,68 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
 
-  // it('On confirm payment and it is soldout => it should mark sell off as success', async function() {
-  //   console.log('transafer tokens')
-  //   await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+  it.only('On confirm payment and it is soldout => it should mark sell off as success', async function() {
+    console.log('transafer tokens')
+    await seeds.token.transfer(firstuser, escrow, '2000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
-  //   console.log('add, accept and pay offers')
-  //   await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-  //   await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
-  //   await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    console.log('add, accept and pay offers')
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
 
-  //   console.log('Confirm to sell half of offered seeds')
-  //   const offersTable1 = await rpc.get_table_rows({
-  //     code: escrow,
-  //     scope: escrow,
-  //     table: 'offers',
-  //     json: true,
-  //     limit: 100
-  //   })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
 
-  //   assert.deepStrictEqual(offersTable1.rows[0].current_status, 's.active')
+    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
 
-  //   await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
-  //   await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+    console.log('Confirm to sell half of offered seeds')
+    const offersTable1 = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
 
-  //   console.log('Confirm to sell half of offered seeds')
-  //   const offersTable2 = await rpc.get_table_rows({
-  //     code: escrow,
-  //     scope: escrow,
-  //     table: 'offers',
-  //     json: true,
-  //     limit: 100
-  //   })
+    assert.deepStrictEqual(offersTable1.rows[0].current_status, 's.active')
 
-  //   assert.deepStrictEqual(offersTable2.rows[0].current_status, 's.soldout')
+    await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
 
-  //   await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
-  //   await contracts.escrow.confrmpaymnt(1, { authorization: `${firstuser}@active` })
+    console.log('Confirm to sell half of offered seeds')
+    const offersTable2 = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
 
-  //   const offersTable = await rpc.get_table_rows({
-  //     code: escrow,
-  //     scope: escrow,
-  //     table: 'offers',
-  //     json: true,
-  //     limit: 100
-  //   })
+    assert.deepStrictEqual(offersTable2.rows[0].current_status, 's.soldout')
 
-  // })
+    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    await contracts.escrow.confrmpaymnt(1, { authorization: `${firstuser}@active` })
+
+    const offersTable = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(offersTable.rows[0].current_status, 's.soldout')
+
+    await contracts.escrow.payoffer(2, { authorization: `${thirduser}@active` })
+    await contracts.escrow.confrmpaymnt(2, { authorization: `${firstuser}@active` })
+
+    const offersTable3 = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(offersTable3.rows[0].current_status, 's.successful')
+  })
 
   it('Settings, set a new param', async function () {
     await contracts.escrow.setparam('testparam', ['uint64', 20], 'test param', { authorization: `${escrow}@active` })
@@ -1141,7 +1157,7 @@ describe('Escrow', async function () {
     await contracts.escrow.resetsttngs({ authorization: `${escrow}@active` })
   })
 
-  it.only('Send contact methods to arbiter', async function() {
+  it('Send contact methods to arbiter', async function() {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
@@ -1222,5 +1238,4 @@ describe('Escrow', async function () {
       }
     ])
   })
-
 })
