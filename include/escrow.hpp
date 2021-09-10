@@ -231,8 +231,8 @@ CONTRACT escrow : public contract {
       string notes;
       time_point created_date;
       time_point resolution_date;
-      bool buyer_contact;
-      bool seller_contact;
+      std::map<name, bool> buyer_contact;
+      std::map<name, bool> seller_contact;
 
       uint64_t primary_key () const { return offer_id; }
       uint128_t by_created_date_id () const { return uint128_t(created_date.sec_since_epoch() << 64) + offer_id; }

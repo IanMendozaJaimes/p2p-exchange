@@ -616,7 +616,15 @@ describe('Escrow', async function () {
         "offer_id": 1,
         "arbiter": "pending",
         "resolution": "pending",
-        "notes": ""
+        "notes": "",
+        "seller_contact": [{
+          "key": firstuser,
+          "value": 0
+        }],
+        "buyer_contact": [{
+          "key": seconduser,
+          "value": 0
+        }]
       }
     ])
     assert.deepStrictEqual(onlyAfter24h, true)
@@ -683,7 +691,15 @@ describe('Escrow', async function () {
         "offer_id": 1,
         "arbiter": "seedsuserccc",
         "resolution": "a.inprogress",
-        "notes": ""
+        "notes": "",
+        "seller_contact": [{
+          "key": firstuser,
+          "value": 0
+        }],
+        "buyer_contact": [{
+          "key": seconduser,
+          "value": 0
+        }]
       }
     ])
 
@@ -783,6 +799,14 @@ describe('Escrow', async function () {
         "arbiter": "seedsuserccc",
         "resolution": `${firstuser}`,
         "notes": "Resolved to seller",
+        "seller_contact": [{
+          "key": firstuser,
+          "value": 0
+        }],
+        "buyer_contact": [{
+          "key": seconduser,
+          "value": 0
+        }]
       }
     ])
 
@@ -904,6 +928,14 @@ describe('Escrow', async function () {
         "arbiter": "seedsuserccc",
         "resolution": `${seconduser}`,
         "notes": "Resolved to buyer",
+        "seller_contact": [{
+          "key": firstuser,
+          "value": 0
+        }],
+        "buyer_contact": [{
+          "key": seconduser,
+          "value": 0
+        }]
       }
     ])
 
@@ -938,19 +970,19 @@ describe('Escrow', async function () {
 
     assert.deepStrictEqual(trxStats.rows, [
       {
-        "account": "seedsuseraaa",
+        "account": firstuser,
         "total_trx": 0,
         "sell_successful": 0,
         "buy_successful": 0
       },
       {
-        "account": "seedsuserbbb",
+        "account": seconduser,
         "total_trx": 1,
         "sell_successful": 0,
         "buy_successful": 1
       },
       {
-        "account": "seedsuserccc",
+        "account": thirduser,
         "total_trx": 0,
         "sell_successful": 0,
         "buy_successful": 0
@@ -1035,6 +1067,14 @@ describe('Escrow', async function () {
         "arbiter": "seedsuserccc",
         "resolution": `${firstuser}`,
         "notes": "Resolved to seller",
+        "seller_contact": [{
+          "key": firstuser,
+          "value": 0
+        }],
+        "buyer_contact": [{
+          "key": seconduser,
+          "value": 0
+        }]
       }
     ])
 
@@ -1076,7 +1116,7 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
 
-  it.only('On confirm payment and it is soldout => it should mark sell off as success', async function() {
+  it('On confirm payment and it is soldout => it should mark sell off as success', async function() {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '2000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
@@ -1153,10 +1193,6 @@ describe('Escrow', async function () {
     console.log(JSON.stringify(settingsParam, null, 2))
   })
 
-  it('Reset settings', async function() {
-    await contracts.escrow.resetsttngs({ authorization: `${escrow}@active` })
-  })
-
   it('Send contact methods to arbiter', async function() {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
@@ -1203,8 +1239,14 @@ describe('Escrow', async function () {
       "arbiter": thirduser,
       "resolution": "a.inprogress",
       "notes": "",
-      "buyer_contact": 1,
-      "seller_contact": 1
+      "seller_contact": [{
+        "key": firstuser,
+        "value": 1
+      }],
+      "buyer_contact": [{
+        "key": seconduser,
+        "value": 1
+      }]
     })
 
     const messagesTable = await rpc.get_table_rows({
@@ -1237,5 +1279,9 @@ describe('Escrow', async function () {
         mac: 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165'
       }
     ])
+  })
+
+  it('Reset settings', async function() {
+    await contracts.escrow.resetsttngs({ authorization: `${escrow}@active` })
   })
 })

@@ -614,6 +614,8 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
     arbitrage.resolution = arbitrage_pending;
     arbitrage.notes = "";
     arbitrage.created_date = current_time_point();
+    arbitrage.buyer_contact.insert(std::make_pair(buyer, false));
+    arbitrage.seller_contact.insert(std::make_pair(seller, false));
   });
 
   offers_t.modify(boitr, _self, [&](auto & buyoffer){
@@ -836,9 +838,9 @@ ACTION escrow::sendconmethd (
 
   arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage) {
     if (has_auth(seller)) {
-      arbitrage.seller_contact = true;
+      arbitrage.seller_contact.at(seller) = true;
     } else {
-     arbitrage.buyer_contact = true;
+      arbitrage.buyer_contact.at(buyer) = true;
     }
   });
 
