@@ -728,9 +728,15 @@ describe('Escrow', async function () {
 
     console.log('add, accept and pay offers')
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+
+    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+
     await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
-    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+
+    // await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    await contracts.escrow.payoffer(2, { authorization: `${thirduser}@active` })
 
     try {
       await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
@@ -778,8 +784,41 @@ describe('Escrow', async function () {
 
     let currSellOffBefore = offersB.rows[0]
 
+    const balancesB = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'balances',
+      json: true,
+      limit: 100
+    })
+
+    console.log('Balances before')
+
+    assert.deepEqual(balancesB.rows[0], {
+      account: firstuser,
+      available_balance: '0.0000 SEEDS',
+      swap_balance: '0.0000 SEEDS',
+      escrow_balance: '1000.0000 SEEDS'
+    })
+
     let availabeBefore = currSellOffBefore.quantity_info.find(el => el.key === 'available').value
     let totalOfferedBefore = currSellOffBefore.quantity_info.find(el => el.key === 'totaloffered').value
+
+    const balances = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'balances',
+      json: true,
+      limit: 100
+    })
+
+    console.log('Seller balance before resolve buyoffer 1')
+    assert.deepStrictEqual(balances.rows[0],   {
+      "account": firstuser,
+      "available_balance": "0.0000 SEEDS",
+      "swap_balance": "0.0000 SEEDS",
+      "escrow_balance": "1000.0000 SEEDS"
+    })
 
     await contracts.escrow.resolvesellr(1, "Resolved to seller", { authorization: `${thirduser}@active` })
 
@@ -796,8 +835,8 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(arbitoffs.rows, [
       {
         "offer_id": 1,
-        "arbiter": "seedsuserccc",
-        "resolution": `${firstuser}`,
+        "arbiter": thirduser,
+        "resolution": firstuser,
         "notes": "Resolved to seller",
         "seller_contact": [{
           "key": firstuser,
@@ -810,7 +849,7 @@ describe('Escrow', async function () {
       }
     ])
 
-    const balances = await rpc.get_table_rows({
+    const balances2 = await rpc.get_table_rows({
       code: escrow,
       scope: escrow,
       table: 'balances',
@@ -818,10 +857,28 @@ describe('Escrow', async function () {
       limit: 100
     })
 
-    assert.deepStrictEqual(balances.rows[0],   {
-      "account": "seedsuseraaa",
+    console.log('Seller balance confirm payment of buyoffer 2')
+    assert.deepStrictEqual(balances2.rows[0],   {
+      "account": firstuser,
       "available_balance": "0.0000 SEEDS",
-      "swap_balance": "1000.0000 SEEDS",
+      "swap_balance": "500.0000 SEEDS",
+      "escrow_balance": "500.0000 SEEDS"
+    })
+    
+    await contracts.escrow.confrmpaymnt(2, { authorization: `${firstuser}@active` })
+
+    const balancesAf = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'balances',
+      json: true,
+      limit: 100
+    })
+
+    assert.deepStrictEqual(balancesAf.rows[0],   {
+      "account": firstuser,
+      "available_balance": "0.0000 SEEDS",
+      "swap_balance": "500.0000 SEEDS",
       "escrow_balance": "0.0000 SEEDS"
     })
 
@@ -837,26 +894,32 @@ describe('Escrow', async function () {
     let currSellOff = offers.rows[0]
     let flaggedStatus = currBuyOff.status_history.find(el => el.key === 'b.flagged')
 
-    let availabeQuantity = currSellOff.quantity_info.find(el => el.key === 'available').value
+    let availabeAfter = currSellOff.quantity_info.find(el => el.key === 'available').value
     let totalOffered = currSellOff.quantity_info.find(el => el.key === 'totaloffered').value
 
     assert.deepStrictEqual(availabeBefore, '0.0000 SEEDS')
-    assert.deepStrictEqual(totalOfferedBefore, '1000.0000 SEEDS')
-    assert.deepStrictEqual(availabeQuantity, '1000.0000 SEEDS')
-    assert.deepStrictEqual(totalOffered, '0.0000 SEEDS')
-    assert.deepStrictEqual(currBuyOff.current_status, 'b.flagged')
+    assert.deepStrictEqual(availabeAfter, '500.0000 SEEDS')
+    assert.deepStrictEqual(totalOffered, '1000.0000 SEEDS')
+
+    console.log('Buy offer is marked as flagged ')
     assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
 
-  it('Resolve buyer', async function() {
+  it.only('Resolve buyer', async function() {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
     console.log('add, accept and pay offers')
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    
+    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    
     await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+
     await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    await contracts.escrow.payoffer(2, { authorization: `${thirduser}@active` })
 
     try {
       await contracts.escrow.resolvebuyer(1, "", { authorization: `${thirduser}@active` })
@@ -896,8 +959,8 @@ describe('Escrow', async function () {
 
     const firstuserBalanceBefore = await getAccountBalance(seedsContracts.token, seconduser, seedsSymbol)
 
-    await contracts.escrow.resolvebuyer(1, "Resolved to buyer", { authorization: `${thirduser}@active` })
-
+    await contracts.escrow.confrmpaymnt(2, { authorization: `${firstuser}@active` })
+    
     const offers = await rpc.get_table_rows({
       code: escrow,
       scope: escrow,
@@ -906,11 +969,28 @@ describe('Escrow', async function () {
       limit: 100
     })
 
-    let currBuyOffer = offers.rows.find(el => el.id === 1)
-    let succStatus = currBuyOffer.status_history.find(el => el.key === 'b.success')
+    let currSellOff = offers.rows.find(el => el.id === 0)
+    assert.deepStrictEqual(currSellOff.current_status, 's.soldout')
 
-    assert.deepStrictEqual(currBuyOffer.current_status, 'b.success')
-    assert.notDeepStrictEqual(succStatus.value, 'b.success')
+    await contracts.escrow.resolvebuyer(1, "Resolved to buyer", { authorization: `${thirduser}@active` })
+
+    const offersAf = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    console.log('Sell offer is s.successful because all other buy offers are as b.success and buy offer was resolved to buyer')
+    let currSellOffAf = offersAf.rows.find(el => el.id === 0)
+    assert.deepStrictEqual(currSellOffAf.current_status, 's.successful')
+
+    let currBuyOfferA = offersAf.rows.find(el => el.id === 1)
+    let succStatusA = currBuyOfferA.status_history.find(el => el.key === 'b.success')
+
+    assert.deepStrictEqual(currBuyOfferA.current_status, 'b.success')
+    assert.notDeepStrictEqual(succStatusA.value, 'b.success')
 
     const arbitoffs = await rpc.get_table_rows({
       code: escrow,
@@ -925,7 +1005,7 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(arbitoffs.rows, [
       {
         "offer_id": 1,
-        "arbiter": "seedsuserccc",
+        "arbiter": thirduser,
         "resolution": `${seconduser}`,
         "notes": "Resolved to buyer",
         "seller_contact": [{
@@ -958,7 +1038,7 @@ describe('Escrow', async function () {
 
     const firstuserBalanceAfter = await getAccountBalance(seedsContracts.token, seconduser, seedsSymbol)
 
-    assert.deepStrictEqual(firstuserBalanceAfter - firstuserBalanceBefore, 1000.0)
+    assert.deepStrictEqual(firstuserBalanceAfter - firstuserBalanceBefore, 500.0)
 
     const trxStats = await rpc.get_table_rows({
       code: escrow,
@@ -971,8 +1051,8 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(trxStats.rows, [
       {
         "account": firstuser,
-        "total_trx": 0,
-        "sell_successful": 0,
+        "total_trx": 1,
+        "sell_successful": 1,
         "buy_successful": 0
       },
       {
@@ -983,9 +1063,9 @@ describe('Escrow', async function () {
       },
       {
         "account": thirduser,
-        "total_trx": 0,
+        "total_trx": 1,
         "sell_successful": 0,
-        "buy_successful": 0
+        "buy_successful": 1
       }
     ])
   })

@@ -506,7 +506,7 @@ ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id)
 
   send_transfer(boitr->buyer, quantity, std::string("SEEDS bought from " + seller.to_string()));
 
-  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+  offers_t.modify(boitr, _self, [&](auto & buyoffer) {
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_successful, current_time_point()));
     buyoffer.current_status = buy_offer_status_successful;
   });
@@ -693,8 +693,7 @@ void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
   asset totaloffered = sitr->quantity_info.find(name("totaloffered"))->second;
 
   offers_t.modify(sitr, _self, [&](auto & selloffer) {
-    selloffer.quantity_info.at(name("available")) = available + quantity;
-    selloffer.quantity_info.at(name("totaloffered")) = totaloffered - quantity;
+    selloffer.quantity_info.at(name("available")) = available + quantity; // Return offered to available
   });
 
   arbitrage_offers_t.modify(aritr, _self, [&](auto & arbitrage) {
@@ -703,8 +702,8 @@ void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
   });
 
   balances_t.modify(bitr, _self, [&](auto & balance) {
-    balance.swap_balance += quantity;
     balance.escrow_balance -= quantity;
+    balance.swap_balance += quantity;
   });
 
   offers_t.modify(boitr, _self, [&](auto & buyoffer){
@@ -739,8 +738,8 @@ void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes)
 
   balances_tables balances_t(get_self(), get_self().value);
 
-  auto bitr = balances_t.find(seller.value);
-  check(bitr != balances_t.end(), "balance not found");
+  auto sitr = balances_t.find(seller.value);
+  check(sitr != balances_t.end(), "balance not found");
 
   send_transfer(boitr->buyer, quantity, std::string("SEEDS bought from " + seller.to_string()));
 
@@ -749,16 +748,21 @@ void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes)
     arbitrage.notes = notes;
   });
 
-  balances_t.modify(bitr, _self, [&](auto & balance) {
+  balances_t.modify(sitr, _self, [&](auto & balance) {
     balance.escrow_balance -= quantity;
   });
 
-  offers_t.modify(boitr, _self, [&](auto & buyoffer){
+  // TODO - Reduce available quantity of sell offer
+
+  offers_t.modify(boitr, _self, [&](auto & buyoffer) {
     buyoffer.status_history.insert(std::make_pair(buy_offer_status_successful, current_time_point()));
     buyoffer.current_status = buy_offer_status_successful;
   });
 
   add_success_transaction(buyer, offer_type_buy);
+
+  check_sale_success(offer_id);
+
   // Penalize seller - pending
 }
 
