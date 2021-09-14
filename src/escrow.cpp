@@ -661,7 +661,7 @@ void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
 
   auto aritr = arbitrage_offers_t.find(offer_id);
   check(aritr != arbitrage_offers_t.end(), "arbitrage does not exist");
-  check(aritr->resolution == arbitrage_status_inprogress, "this arbitration ticket does not have an arbiter yet");
+  check(aritr->resolution == arbitrage_status_inprogress, "this arbitration ticket isn't in progress");
 
   name arbiter = aritr->arbiter;
   require_auth(arbiter);
@@ -720,7 +720,7 @@ void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes)
 
   auto aritr = arbitrage_offers_t.find(offer_id);
   check(aritr != arbitrage_offers_t.end(), "arbitrage does not exist");
-  check(aritr->resolution == arbitrage_status_inprogress, "this arbitration ticket does not have an arbiter yet");
+  check(aritr->resolution == arbitrage_status_inprogress, "this arbitration ticket isn't in progress");
 
   name arbiter = aritr->arbiter;
   require_auth(arbiter);

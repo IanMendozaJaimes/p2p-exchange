@@ -762,8 +762,8 @@ describe('Escrow', async function () {
     } catch (error) {
       assertError({
         error,
-        textInside: 'this arbitration ticket does not have an arbiter yet',
-        message: 'this arbitration ticket does not have an arbiter yet (expected)',
+        textInside: 'this arbitration ticket isn\'t in progress',
+        message: 'this arbitration ticket isn\'t in progress (expected)',
         throwError: true
       })
     }
@@ -905,7 +905,7 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
 
-  it.only('Resolve buyer', async function() {
+  it('Resolve buyer', async function() {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
@@ -945,8 +945,8 @@ describe('Escrow', async function () {
     } catch (error) {
       assertError({
         error,
-        textInside: 'this arbitration ticket does not have an arbiter yet',
-        message: 'this arbitration ticket does not have an arbiter yet (expected)',
+        textInside: 'this arbitration ticket isn\'t in progress',
+        message: 'this arbitration ticket isn\'t in progress (expected)',
         throwError: true
       })
     }
@@ -1104,8 +1104,8 @@ describe('Escrow', async function () {
     } catch (error) {
       assertError({
         error,
-        textInside: 'this arbitration ticket does not have an arbiter yet',
-        message: 'this arbitration ticket does not have an arbiter yet (expected)',
+        textInside: 'this arbitration ticket isn\'t in progress',
+        message: 'this arbitration ticket isn\'t in progress (expected)',
         throwError: true
       })
     }
@@ -1191,7 +1191,7 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(availabeBefore, '0.0000 SEEDS')
     assert.deepStrictEqual(totalOfferedBefore, '1000.0000 SEEDS')
     assert.deepStrictEqual(availabeQuantity, '1000.0000 SEEDS')
-    assert.deepStrictEqual(totalOffered, '0.0000 SEEDS')
+    assert.deepStrictEqual(totalOffered, '1000.0000 SEEDS')
     assert.deepStrictEqual(currBuyOff.current_status, 'b.flagged')
     assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
