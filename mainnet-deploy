@@ -1,0 +1,28 @@
+
+
+./cleos -u https://api.telosfoundation.io set account permission p2p.seeds active '{
+  "threshold":1,
+  "keys":[
+    {"key":"EOS6kp3dm9Ug5D3LddB8kCMqmHg2gxKpmRvTNJ6bDFPiop93sGyLR","weight":1}
+  ],
+  "accounts":[
+    {"permission":{"actor":"ianonsiomeja", "permission":"active"},"weight":1},
+    {"permission":{"actor":"p2p.seeds", "permission":"eosio.code"},"weight":1}
+  ]
+}' owner -p p2p.seeds@active
+
+
+
+
+./cleos -u https://api.telosfoundation.io set code p2p.seeds \
+  ../../../Documents/p2p-exchange/p2p-exchange/compiled/escrow.wasm \
+  -p p2p.seeds@active
+
+
+./cleos -u https://api.telosfoundation.io set abi p2p.seeds \
+  ../../../Documents/p2p-exchange/p2p-exchange/compiled/escrow.abi \
+  -p p2p.seeds@active
+
+
+
+REMEMBER TO RUN THE MIGRATIOOOOOOOOOOOOOONS!!!!!!!!!!!!!!!!
