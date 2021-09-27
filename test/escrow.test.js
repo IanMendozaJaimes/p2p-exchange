@@ -29,7 +29,7 @@ describe('Escrow', async function () {
   })
 
   beforeEach(async function () {
-    
+
     await contracts.escrow.reset({ authorization: `${escrow}@active` })
     await seeds.accounts.reset({ authorization: `${seedsContracts.accounts}@active` })
 
@@ -40,11 +40,11 @@ describe('Escrow', async function () {
     await seeds.accounts.testresident(firstuser, { authorization: `${seedsContracts.accounts}@active` })
     await seeds.accounts.testcitizen(seconduser, { authorization: `${seedsContracts.accounts}@active` })
 
-    await contracts.escrow.upsertuser(firstuser, [{'key': 'signal', 'value': '123456789'}], [{'key': 'paypal', 'value': 'url'}], 'gmt', 'usd', { authorization: `${firstuser}@active` })
-    await contracts.escrow.upsertuser(seconduser, [{'key': 'signal', 'value': '987654321'}], [{'key': 'paypal', 'value': 'url2'}], 'gmt', 'mxn', { authorization: `${seconduser}@active` })
-    await contracts.escrow.upsertuser(thirduser, [{'key': 'signal', 'value': '123456789'}], [{'key': 'paypal', 'value': 'url3'}], 'udt', 'eur', { authorization: `${thirduser}@active` })
+    await contracts.escrow.upsertuser(firstuser, [{ 'key': 'signal', 'value': '123456789' }], [{ 'key': 'paypal', 'value': 'url' }], 'gmt', 'usd', { authorization: `${firstuser}@active` })
+    await contracts.escrow.upsertuser(seconduser, [{ 'key': 'signal', 'value': '987654321' }], [{ 'key': 'paypal', 'value': 'url2' }], 'gmt', 'mxn', { authorization: `${seconduser}@active` })
+    await contracts.escrow.upsertuser(thirduser, [{ 'key': 'signal', 'value': '123456789' }], [{ 'key': 'paypal', 'value': 'url3' }], 'udt', 'eur', { authorization: `${thirduser}@active` })
   })
-  
+
   it('Transfer Seeds', async function () {
 
     console.log('deposit to the escrow contract')
@@ -66,7 +66,7 @@ describe('Escrow', async function () {
 
     let onlySeedsUsers = true
     try {
-      await contracts.escrow.upsertuser(fourthuser, [{'key': 'signal', 'value': '1222222222'}], [{'key': 'paypal', 'value': 'url4'}], 'udt', 'eur', { authorization: `${fourthuser}@active` })
+      await contracts.escrow.upsertuser(fourthuser, [{ 'key': 'signal', 'value': '1222222222' }], [{ 'key': 'paypal', 'value': 'url4' }], 'udt', 'eur', { authorization: `${fourthuser}@active` })
       onlySeedsUsers = false
     } catch (error) {
       assertError({
@@ -96,13 +96,13 @@ describe('Escrow', async function () {
 
     console.log('withdraw Seeds from escrow contract')
     const firstuserBalanceBefore = await getAccountBalance(seedsContracts.token, firstuser, seedsSymbol)
-    await contracts.escrow.withdraw(firstuser, '500.0000 SEEDS',{ authorization: `${firstuser}@active` })
-    await contracts.escrow.withdraw(firstuser, '500.0000 SEEDS',{ authorization: `${firstuser}@active` })
+    await contracts.escrow.withdraw(firstuser, '500.0000 SEEDS', { authorization: `${firstuser}@active` })
+    await contracts.escrow.withdraw(firstuser, '500.0000 SEEDS', { authorization: `${firstuser}@active` })
     const firstuserBalanceAfter = await getAccountBalance(seedsContracts.token, firstuser, seedsSymbol)
 
     let onlyAvailableBalance = true
     try {
-      await contracts.escrow.withdraw(seconduser, '2000.0001 SEEDS',{ authorization: `${seconduser}@active` })
+      await contracts.escrow.withdraw(seconduser, '2000.0001 SEEDS', { authorization: `${seconduser}@active` })
       onlyAvailableBalance = false
     } catch (error) {
       assertError({
@@ -202,6 +202,9 @@ describe('Escrow', async function () {
         throwError: true
       })
     }
+
+
+
 
   })
 
@@ -387,7 +390,7 @@ describe('Escrow', async function () {
     })
 
     console.log(JSON.stringify(sellOffers, null, 2))
-    
+
     /// reject buy offer
     console.log('Reject offer')
 
@@ -444,6 +447,37 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(onlyRejectBySeller, true)
     assert.deepStrictEqual(onlyRejectBuyOffers, true)
     assert.deepStrictEqual(onlyRejectPendingBuyOffers, true)
+  })
+
+  it('Cancels sell offer', async function () {
+
+    console.log('deposit to the escrow contract')
+    await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+
+    console.log('create sell offer')
+    await contracts.escrow.addselloffer(seconduser, '1200.0000 SEEDS', 11000, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '500.0000 SEEDS', 10000, { authorization: `${firstuser}@active` })
+
+    console.log('Add buy offers')
+    await contracts.escrow.addbuyoffer(thirduser, 0, '400.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    await contracts.escrow.addbuyoffer(firstuser, 0, '200.0000 SEEDS', 'paypal', { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 1, '450.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+
+    console.log('Cancel sell offer id 0')
+
+    await contracts.escrow.cancelsoffer(0, { authorization: `${seconduser}@active` })
+
+    const sellOffers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    console.log(JSON.stringify(sellOffers, null, 2))
+
   })
 
   it('Add arbiter', async function () {
@@ -722,7 +756,7 @@ describe('Escrow', async function () {
     assert.deepStrictEqual({ key: 'a.inprogress' }, inArbitrage)
   })
 
-  it('Resolve seller', async function() {
+  it('Resolve seller', async function () {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
@@ -813,7 +847,7 @@ describe('Escrow', async function () {
     })
 
     console.log('Seller balance before resolve buyoffer 1')
-    assert.deepStrictEqual(balances.rows[0],   {
+    assert.deepStrictEqual(balances.rows[0], {
       "account": firstuser,
       "available_balance": "0.0000 SEEDS",
       "swap_balance": "0.0000 SEEDS",
@@ -858,13 +892,13 @@ describe('Escrow', async function () {
     })
 
     console.log('Seller balance confirm payment of buyoffer 2')
-    assert.deepStrictEqual(balances2.rows[0],   {
+    assert.deepStrictEqual(balances2.rows[0], {
       "account": firstuser,
       "available_balance": "0.0000 SEEDS",
       "swap_balance": "500.0000 SEEDS",
       "escrow_balance": "500.0000 SEEDS"
     })
-    
+
     await contracts.escrow.confrmpaymnt(2, { authorization: `${firstuser}@active` })
 
     const balancesAf = await rpc.get_table_rows({
@@ -875,7 +909,7 @@ describe('Escrow', async function () {
       limit: 100
     })
 
-    assert.deepStrictEqual(balancesAf.rows[0],   {
+    assert.deepStrictEqual(balancesAf.rows[0], {
       "account": firstuser,
       "available_balance": "0.0000 SEEDS",
       "swap_balance": "500.0000 SEEDS",
@@ -905,16 +939,16 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
 
-  it('Resolve buyer', async function() {
+  it('Resolve buyer', async function () {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
     console.log('add, accept and pay offers')
     await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    
+
     await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
     await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
-    
+
     await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
     await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
 
@@ -960,7 +994,7 @@ describe('Escrow', async function () {
     const firstuserBalanceBefore = await getAccountBalance(seedsContracts.token, seconduser, seedsSymbol)
 
     await contracts.escrow.confrmpaymnt(2, { authorization: `${firstuser}@active` })
-    
+
     const offers = await rpc.get_table_rows({
       code: escrow,
       scope: escrow,
@@ -1070,7 +1104,7 @@ describe('Escrow', async function () {
     ])
   })
 
-  it('Resolve seller', async function() {
+  it('Resolve seller', async function () {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
@@ -1166,7 +1200,7 @@ describe('Escrow', async function () {
       limit: 100
     })
 
-    assert.deepStrictEqual(balances.rows[0],   {
+    assert.deepStrictEqual(balances.rows[0], {
       "account": "seedsuseraaa",
       "available_balance": "0.0000 SEEDS",
       "swap_balance": "1000.0000 SEEDS",
@@ -1196,7 +1230,7 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(flaggedStatus.key, 'b.flagged')
   })
 
-  it('On confirm payment and it is soldout => it should mark sell off as success', async function() {
+  it('On confirm payment and it is soldout => it should mark sell off as success', async function () {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '2000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
@@ -1273,7 +1307,7 @@ describe('Escrow', async function () {
     console.log(JSON.stringify(settingsParam, null, 2))
   })
 
-  it('Send contact methods to arbiter', async function() {
+  it('Send contact methods to arbiter', async function () {
     console.log('transafer tokens')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
@@ -1361,7 +1395,7 @@ describe('Escrow', async function () {
     ])
   })
 
-  it('Reset settings', async function() {
+  it('Reset settings', async function () {
     await contracts.escrow.resetsttngs({ authorization: `${escrow}@active` })
   })
 })
