@@ -321,8 +321,14 @@ ACTION escrow::cancelsoffer(const uint64_t & sell_offer_id)
     offer.quantity_info.at(name("available")) = asset(0, util::seeds_symbol);
   });
 
-  // cancel the non-accepted buy offers associated with this sell offer?
+  auto offersby_sell_id = offers_t.get_index<name("bysellid")>();
+  auto obsitr = offersby_sell_id.lower_bound(uint128_t(sell_offer_id) << 64);
 
+  while (obsitr != offersby_sell_id.end() && obsitr->sell_id == sell_offer_id) {
+    if (obsitr->type == offer_type_buy)
+      rejctbuyoffr(obsitr->id);
+    obsitr++;
+  }
 }
 
 ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, const asset & quantity, const std::string & payment_method)

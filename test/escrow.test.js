@@ -183,7 +183,37 @@ describe('Escrow', async function () {
       table: 'offers',
       json: true,
       limit: 100
+    })  it('Cancels sell offer', async function () {
+
+      console.log('deposit to the escrow contract')
+      await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
+      await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+
+      console.log('create sell offer')
+      await contracts.escrow.addselloffer(seconduser, '1200.0000 SEEDS', 11000, { authorization: `${seconduser}@active` })
+      await contracts.escrow.addselloffer(firstuser, '500.0000 SEEDS', 10000, { authorization: `${firstuser}@active` })
+
+      console.log('Add buy offers')
+      await contracts.escrow.addbuyoffer(thirduser, 0, '400.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+      await contracts.escrow.addbuyoffer(firstuser, 0, '200.0000 SEEDS', 'paypal', { authorization: `${firstuser}@active` })
+      await contracts.escrow.addbuyoffer(seconduser, 1, '450.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+
+      console.log('Cancel sell offer id 0')
+
+      await contracts.escrow.cancelsoffer(0, { authorization: `${seconduser}@active` })
+
+      const sellOffers = await rpc.get_table_rows({
+        code: escrow,
+        scope: escrow,
+        table: 'offers',
+        json: true,
+        limit: 100
+      })
+
+      console.log(JSON.stringify(sellOffers, null, 2))
+
     })
+
 
     console.log(JSON.stringify(sellOffers, null, 2))
 
@@ -445,6 +475,37 @@ describe('Escrow', async function () {
     assert.deepStrictEqual(onlyRejectBuyOffers, true)
     assert.deepStrictEqual(onlyRejectPendingBuyOffers, true)
   })
+
+  it('Cancels sell offer', async function () {
+
+    console.log('deposit to the escrow contract')
+    await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
+    await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
+
+    console.log('create sell offer')
+    await contracts.escrow.addselloffer(seconduser, '1200.0000 SEEDS', 11000, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '500.0000 SEEDS', 10000, { authorization: `${firstuser}@active` })
+
+    console.log('Add buy offers')
+    await contracts.escrow.addbuyoffer(thirduser, 0, '400.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    await contracts.escrow.addbuyoffer(firstuser, 0, '200.0000 SEEDS', 'paypal', { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 1, '450.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+
+    console.log('Cancel sell offer id 0')
+
+    await contracts.escrow.cancelsoffer(0, { authorization: `${seconduser}@active` })
+
+    const sellOffers = await rpc.get_table_rows({
+      code: escrow,
+      scope: escrow,
+      table: 'offers',
+      json: true,
+      limit: 100
+    })
+
+    console.log(JSON.stringify(sellOffers, null, 2))
+  })
+
 
   it('Add arbiter', async function () {
 
