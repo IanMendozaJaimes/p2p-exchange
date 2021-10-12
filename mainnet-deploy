@@ -25,4 +25,15 @@
 
 
 
+
+
+
+./cleos -u https://api.telosfoundation.io push action p2p.seeds reset '[]' -p p2p.seeds@active
+
+
+
+
+
+
+
 REMEMBER TO RUN THE MIGRATIOOOOOOOOOOOOOONS!!!!!!!!!!!!!!!!

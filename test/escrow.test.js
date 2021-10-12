@@ -183,7 +183,9 @@ describe('Escrow', async function () {
       table: 'offers',
       json: true,
       limit: 100
-    })  it('Cancels sell offer', async function () {
+    })  
+    
+    it('Cancels sell offer', async function () {
 
       console.log('deposit to the escrow contract')
       await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
