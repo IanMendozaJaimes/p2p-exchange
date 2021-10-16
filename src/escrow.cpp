@@ -152,7 +152,7 @@ ACTION escrow::deposit(const name & from, const name & to, const asset & quantit
   }
 }
 
-ACTION escrow::withdraw(const name & account, const asset & quantity)
+ACTION escrow::withdraw(const name & account, const asset & quantity, const std::string & memo)
 {
   require_auth(account);
 
@@ -176,7 +176,8 @@ ACTION escrow::upsertuser(
   const mapss & contact_methods,
   const mapss & payment_methods,
   const name & time_zone,
-  const name & fiat_currency
+  const name & fiat_currency,
+  const std::string & memo
 )
 {
   require_auth(account);
@@ -217,7 +218,7 @@ ACTION escrow::upsertuser(
   }
 }
 
-ACTION escrow::addpublickey(const name & account, const string & public_key)
+ACTION escrow::addpublickey(const name & account, const string & public_key, const std::string & memo)
 {
   require_auth(account);
 
@@ -239,7 +240,7 @@ ACTION escrow::addpublickey(const name & account, const string & public_key)
   }
 }
 
-ACTION escrow::addselloffer(const name & seller, const asset & total_offered, const uint64_t & price_percentage)
+ACTION escrow::addselloffer(const name & seller, const asset & total_offered, const uint64_t & price_percentage, const std::string & memo)
 {
   require_auth(seller);
 
@@ -291,7 +292,7 @@ ACTION escrow::addselloffer(const name & seller, const asset & total_offered, co
   });
 }
 
-ACTION escrow::cancelsoffer(const uint64_t & sell_offer_id)
+ACTION escrow::cancelsoffer(const uint64_t & sell_offer_id, const std::string & memo)
 {
   offer_tables offers_t(get_self(), get_self().value);
 
@@ -326,12 +327,12 @@ ACTION escrow::cancelsoffer(const uint64_t & sell_offer_id)
 
   while (obsitr != offersby_sell_id.end() && obsitr->sell_id == sell_offer_id) {
     if (obsitr->type == offer_type_buy)
-      rejctbuyoffr(obsitr->id);
+      rejctbuyoffr(obsitr->id, std::string(""));
     obsitr++;
   }
 }
 
-ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, const asset & quantity, const std::string & payment_method)
+ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, const asset & quantity, const std::string & payment_method, const std::string & memo)
 {
   require_auth(buyer);
 
@@ -378,7 +379,7 @@ ACTION escrow::addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, c
   });
 }
 
-ACTION escrow::delbuyoffer(const uint64_t & buy_offer_id)
+ACTION escrow::delbuyoffer(const uint64_t & buy_offer_id, const std::string & memo)
 {
   offer_tables offers_t(get_self(), get_self().value);
 
@@ -406,7 +407,7 @@ ACTION escrow::delbuyoffer(const uint64_t & buy_offer_id)
   offers_t.erase(bitr);
 }
 
-ACTION escrow::accptbuyoffr(const uint64_t & buy_offer_id)
+ACTION escrow::accptbuyoffr(const uint64_t & buy_offer_id, const std::string & memo)
 {
   offer_tables offers_t(get_self(), get_self().value);
 
@@ -456,7 +457,7 @@ ACTION escrow::accptbuyoffr(const uint64_t & buy_offer_id)
   });
 }
 
-ACTION escrow::rejctbuyoffr(const uint64_t & buy_offer_id) 
+ACTION escrow::rejctbuyoffr(const uint64_t & buy_offer_id, const std::string & memo) 
 {
 
   offer_tables offers_t(get_self(), get_self().value); 
@@ -475,7 +476,7 @@ ACTION escrow::rejctbuyoffr(const uint64_t & buy_offer_id)
 
 } 
 
-ACTION escrow::payoffer(const uint64_t & buy_offer_id)
+ACTION escrow::payoffer(const uint64_t & buy_offer_id, const std::string & memo)
 {
   offer_tables offers_t(get_self(), get_self().value);
 
@@ -493,7 +494,7 @@ ACTION escrow::payoffer(const uint64_t & buy_offer_id)
   });
 }
 
-ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id)
+ACTION escrow::confrmpaymnt(const uint64_t & buy_offer_id, const std::string & memo)
 {
   offer_tables offers_t(get_self(), get_self().value);
 
@@ -591,7 +592,7 @@ void escrow::delarbiter(const name & account)
   });
 }
 
-void escrow::initarbitrage(const uint64_t & buy_offer_id)
+void escrow::initarbitrage(const uint64_t & buy_offer_id, const std::string & memo)
 {
   offer_tables offers_t(get_self(), get_self().value);
 
@@ -630,7 +631,7 @@ void escrow::initarbitrage(const uint64_t & buy_offer_id)
   });
 }
 
-void escrow::arbtrgeoffer(const name & arbiter, const uint64_t & offer_id)
+void escrow::arbtrgeoffer(const name & arbiter, const uint64_t & offer_id, const std::string & memo)
 {
   user_tables users_t(get_self(), get_self().value);
 
@@ -661,7 +662,7 @@ void escrow::arbtrgeoffer(const name & arbiter, const uint64_t & offer_id)
   });
 }
 
-void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
+void escrow::resolvesellr(const uint64_t & offer_id, const string & notes, const std::string & memo)
 {
   arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
 
@@ -720,7 +721,7 @@ void escrow::resolvesellr(const uint64_t & offer_id, const string & notes)
   // Penalize buyer - pending
 }
 
-void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes)
+void escrow::resolvebuyer(const uint64_t & offer_id, const string & notes, const std::string & memo)
 {
   arbitrage_tables arbitrage_offers_t(get_self(), get_self().value);
 
@@ -777,7 +778,8 @@ ACTION escrow::addoffermsg(
   const string & iv, 
   const string & ephem_key, 
   const string & message, 
-  const checksum256 & mac
+  const checksum256 & mac,
+  const std::string & memo
 )
 {
   offer_tables offers_t(get_self(), get_self().value);
@@ -808,7 +810,7 @@ ACTION escrow::addoffermsg(
 }
 
 
-ACTION escrow::delprivtemsg(const uint64_t & message_id)
+ACTION escrow::delprivtemsg(const uint64_t & message_id, const std::string & memo)
 {
   private_message_tables msg_t(get_self(), get_self().value);
   auto mitr = msg_t.require_find(message_id, "message not found");
@@ -824,7 +826,8 @@ ACTION escrow::sendconmethd (
   const string & iv, 
   const string & ephem_key, 
   const string & message, 
-  const checksum256 & mac
+  const checksum256 & mac,
+  const std::string & memo
 ) {
   offer_tables offers_t(get_self(), get_self().value);
 

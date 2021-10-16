@@ -14,6 +14,7 @@ describe('Escrow', async function () {
   let contracts
   let seeds
   let seedsUsers
+  const hyperionMemo = 'a memo for hyperion'
 
   before(async function () {
 
@@ -40,9 +41,9 @@ describe('Escrow', async function () {
     await seeds.accounts.testresident(firstuser, { authorization: `${seedsContracts.accounts}@active` })
     await seeds.accounts.testcitizen(seconduser, { authorization: `${seedsContracts.accounts}@active` })
 
-    await contracts.escrow.upsertuser(firstuser, [{'key': 'signal', 'value': '123456789'}], [{'key': 'paypal', 'value': 'url'}], 'gmt', 'usd', { authorization: `${firstuser}@active` })
-    await contracts.escrow.upsertuser(seconduser, [{'key': 'signal', 'value': '987654321'}], [{'key': 'paypal', 'value': 'url2'}], 'gmt', 'mxn', { authorization: `${seconduser}@active` })
-    await contracts.escrow.upsertuser(thirduser, [{'key': 'signal', 'value': '123456789'}], [{'key': 'paypal', 'value': 'url3'}], 'udt', 'eur', { authorization: `${thirduser}@active` })
+    await contracts.escrow.upsertuser(firstuser, [{'key': 'signal', 'value': '123456789'}], [{'key': 'paypal', 'value': 'url'}], 'gmt', 'usd', hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.upsertuser(seconduser, [{'key': 'signal', 'value': '987654321'}], [{'key': 'paypal', 'value': 'url2'}], 'gmt', 'mxn', hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.upsertuser(thirduser, [{'key': 'signal', 'value': '123456789'}], [{'key': 'paypal', 'value': 'url3'}], 'udt', 'eur', hyperionMemo, { authorization: `${thirduser}@active` })
   })
   
   it('Transfer Seeds', async function () {
@@ -66,7 +67,7 @@ describe('Escrow', async function () {
 
     let onlySeedsUsers = true
     try {
-      await contracts.escrow.upsertuser(fourthuser, [{'key': 'signal', 'value': '1222222222'}], [{'key': 'paypal', 'value': 'url4'}], 'udt', 'eur', { authorization: `${fourthuser}@active` })
+      await contracts.escrow.upsertuser(fourthuser, [{'key': 'signal', 'value': '1222222222'}], [{'key': 'paypal', 'value': 'url4'}], 'udt', 'eur', hyperionMemo, { authorization: `${fourthuser}@active` })
       onlySeedsUsers = false
     } catch (error) {
       assertError({
@@ -96,13 +97,13 @@ describe('Escrow', async function () {
 
     console.log('withdraw Seeds from escrow contract')
     const firstuserBalanceBefore = await getAccountBalance(seedsContracts.token, firstuser, seedsSymbol)
-    await contracts.escrow.withdraw(firstuser, '500.0000 SEEDS',{ authorization: `${firstuser}@active` })
-    await contracts.escrow.withdraw(firstuser, '500.0000 SEEDS',{ authorization: `${firstuser}@active` })
+    await contracts.escrow.withdraw(firstuser, '500.0000 SEEDS', hyperionMemo,{ authorization: `${firstuser}@active` })
+    await contracts.escrow.withdraw(firstuser, '500.0000 SEEDS', hyperionMemo,{ authorization: `${firstuser}@active` })
     const firstuserBalanceAfter = await getAccountBalance(seedsContracts.token, firstuser, seedsSymbol)
 
     let onlyAvailableBalance = true
     try {
-      await contracts.escrow.withdraw(seconduser, '2000.0001 SEEDS',{ authorization: `${seconduser}@active` })
+      await contracts.escrow.withdraw(seconduser, '2000.0001 SEEDS', hyperionMemo,{ authorization: `${seconduser}@active` })
       onlyAvailableBalance = false
     } catch (error) {
       assertError({
@@ -147,11 +148,11 @@ describe('Escrow', async function () {
     await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
     console.log('create sell offer')
-    await contracts.escrow.addselloffer(seconduser, '1500.3333 SEEDS', 11000, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(seconduser, '1500.3333 SEEDS', 11000, hyperionMemo, { authorization: `${seconduser}@active` })
 
     let atLeastResidents = true
     try {
-      await contracts.escrow.addselloffer(thirduser, '1500 SEEDS', 11000, { authorization: `${thirduser}@active` })
+      await contracts.escrow.addselloffer(thirduser, '1500 SEEDS', 11000, hyperionMemo, { authorization: `${thirduser}@active` })
       atLeastResidents = false
     } catch (error) {
       assertError({
@@ -164,7 +165,7 @@ describe('Escrow', async function () {
 
     let onlyAvailableBalance = true
     try {
-      await contracts.escrow.addselloffer(firstuser, '1500.3333 SEEDS', 11000, { authorization: `${firstuser}@active` })
+      await contracts.escrow.addselloffer(firstuser, '1500.3333 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
       onlyAvailableBalance = false
     } catch (error) {
       assertError({
@@ -175,7 +176,7 @@ describe('Escrow', async function () {
       })
     }
 
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 9300, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 9300, hyperionMemo, { authorization: `${firstuser}@active` })
 
     const sellOffers = await rpc.get_table_rows({
       code: escrow,
@@ -192,17 +193,17 @@ describe('Escrow', async function () {
       await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
       console.log('create sell offer')
-      await contracts.escrow.addselloffer(seconduser, '1200.0000 SEEDS', 11000, { authorization: `${seconduser}@active` })
-      await contracts.escrow.addselloffer(firstuser, '500.0000 SEEDS', 10000, { authorization: `${firstuser}@active` })
+      await contracts.escrow.addselloffer(seconduser, '1200.0000 SEEDS', 11000, hyperionMemo, { authorization: `${seconduser}@active` })
+      await contracts.escrow.addselloffer(firstuser, '500.0000 SEEDS', 10000, hyperionMemo, { authorization: `${firstuser}@active` })
 
       console.log('Add buy offers')
-      await contracts.escrow.addbuyoffer(thirduser, 0, '400.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
-      await contracts.escrow.addbuyoffer(firstuser, 0, '200.0000 SEEDS', 'paypal', { authorization: `${firstuser}@active` })
-      await contracts.escrow.addbuyoffer(seconduser, 1, '450.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+      await contracts.escrow.addbuyoffer(thirduser, 0, '400.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
+      await contracts.escrow.addbuyoffer(firstuser, 0, '200.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${firstuser}@active` })
+      await contracts.escrow.addbuyoffer(seconduser, 1, '450.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
 
       console.log('Cancel sell offer id 0')
 
-      await contracts.escrow.cancelsoffer(0, { authorization: `${seconduser}@active` })
+      await contracts.escrow.cancelsoffer(0, hyperionMemo, { authorization: `${seconduser}@active` })
 
       const sellOffers = await rpc.get_table_rows({
         code: escrow,
@@ -220,11 +221,11 @@ describe('Escrow', async function () {
     console.log(JSON.stringify(sellOffers, null, 2))
 
     console.log('delete sell offer')
-    await contracts.escrow.cancelsoffer(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.cancelsoffer(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     let onlyOwnerOfTheOffer = true
     try {
-      await contracts.escrow.cancelsoffer(0, { authorization: `${firstuser}@active` })
+      await contracts.escrow.cancelsoffer(0, hyperionMemo, { authorization: `${firstuser}@active` })
       onlyOwnerOfTheOffer = false
     } catch (error) {
       assertError({
@@ -244,13 +245,13 @@ describe('Escrow', async function () {
     await seeds.token.transfer(seconduser, escrow, '2000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
     console.log('create sell offer')
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    await contracts.escrow.addselloffer(seconduser, '500.0000 SEEDS', 11000, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(seconduser, '500.0000 SEEDS', 11000, hyperionMemo, { authorization: `${seconduser}@active` })
 
     console.log('Add buy offers')
     let allowedPaymentMethods = true
     try {
-      await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'bank', { authorization: `${thirduser}@active` })
+      await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'bank', hyperionMemo, { authorization: `${thirduser}@active` })
       allowedPaymentMethods = false
     } catch (error) {
       assertError({
@@ -263,7 +264,7 @@ describe('Escrow', async function () {
 
     let onlyEnoughFoundsInSaleOffer = true
     try {
-      await contracts.escrow.addbuyoffer(thirduser, 0, '1001.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+      await contracts.escrow.addbuyoffer(thirduser, 0, '1001.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
       onlyEnoughFoundsInSaleOffer = false
     } catch (error) {
       assertError({
@@ -276,7 +277,7 @@ describe('Escrow', async function () {
 
     let onlyIfOfferExists = true
     try {
-      await contracts.escrow.addbuyoffer(thirduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+      await contracts.escrow.addbuyoffer(thirduser, 3, '1000.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
       onlyIfOfferExists = false
     } catch (error) {
       assertError({
@@ -289,7 +290,7 @@ describe('Escrow', async function () {
 
     let minOffer = true
     try {
-      await contracts.escrow.addbuyoffer(thirduser, 1, '0.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+      await contracts.escrow.addbuyoffer(thirduser, 1, '0.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
       minOffer = false
     } catch (error) {
       assertError({
@@ -302,7 +303,7 @@ describe('Escrow', async function () {
 
     let notSelffOffer = true
     try {
-      await contracts.escrow.addbuyoffer(firstuser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${firstuser}@active` })
+      await contracts.escrow.addbuyoffer(firstuser, 0, '1000.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${firstuser}@active` })
       notSelffOffer = false
     } catch (error) {
       assertError({
@@ -315,14 +316,14 @@ describe('Escrow', async function () {
 
     console.log('Delete buy offers')
     try {
-      await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+      await contracts.escrow.addbuyoffer(thirduser, 0, '1000.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
     } catch (error) {
       console.log('error', error)
     }
 
     let onlyDeleteBuyOffer = true
     try {
-      await contracts.escrow.delbuyoffer(0, { authorization: `${seconduser}@active` })
+      await contracts.escrow.delbuyoffer(0, hyperionMemo, { authorization: `${seconduser}@active` })
       onlyDeleteBuyOffer = false
     } catch (error) {
       assertError({
@@ -335,7 +336,7 @@ describe('Escrow', async function () {
 
     let onlyOwnerCanDelete = true
     try {
-      await contracts.escrow.delbuyoffer(2, { authorization: `${seconduser}@active` })
+      await contracts.escrow.delbuyoffer(2, hyperionMemo, { authorization: `${seconduser}@active` })
       onlyOwnerCanDelete = false
     } catch (error) {
       assertError({
@@ -348,7 +349,7 @@ describe('Escrow', async function () {
 
     let onlyInTimeRange = true
     try {
-      await contracts.escrow.delbuyoffer(2, { authorization: `${thirduser}@active` })
+      await contracts.escrow.delbuyoffer(2, hyperionMemo, { authorization: `${thirduser}@active` })
       let onlyInTimeRange = false
     } catch (error) {
       assertError({
@@ -360,14 +361,14 @@ describe('Escrow', async function () {
     }
 
     try {
-      await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+      await contracts.escrow.accptbuyoffr(2, hyperionMemo, { authorization: `${firstuser}@active` })
     } catch (error) {
       console.log('error', error)
     }
 
     let onlyPending = true
     try {
-      await contracts.escrow.delbuyoffer(2, { authorization: `${thirduser}@active` })
+      await contracts.escrow.delbuyoffer(2, hyperionMemo, { authorization: `${thirduser}@active` })
       onlyPending = false
     } catch (error) {
       assertError({
@@ -381,12 +382,12 @@ describe('Escrow', async function () {
 
     console.log('Pay offers')
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    await contracts.escrow.addbuyoffer(seconduser, 3, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 3, '1000.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
 
     let onlyPayAccepted = true
     try {
-      await contracts.escrow.payoffer(0, { authorization: `${seconduser}@active` })
+      await contracts.escrow.payoffer(0, hyperionMemo, { authorization: `${seconduser}@active` })
       onlyPayAccepted = false
     } catch (error) {
       assertError({
@@ -399,7 +400,7 @@ describe('Escrow', async function () {
 
     let onlyPayBuyOffers = true
     try {
-      await contracts.escrow.payoffer(4, { authorization: `${seconduser}@active` })
+      await contracts.escrow.payoffer(4, hyperionMemo, { authorization: `${seconduser}@active` })
       onlyPayBuyOffers = false
     } catch (error) {
       assertError({
@@ -425,7 +426,7 @@ describe('Escrow', async function () {
 
     let onlyRejectBySeller = true
     try {
-      await contracts.escrow.rejctbuyoffr(4, { authorization: `${seconduser}@active` })
+      await contracts.escrow.rejctbuyoffr(4, hyperionMemo, { authorization: `${seconduser}@active` })
       onlyRejectBySeller = false
     } catch (error) {
       assertError({
@@ -438,7 +439,7 @@ describe('Escrow', async function () {
 
     let onlyRejectBuyOffers = true
     try {
-      await contracts.escrow.rejctbuyoffr(3, { authorization: `${firstuser}@active` })
+      await contracts.escrow.rejctbuyoffr(3, hyperionMemo, { authorization: `${firstuser}@active` })
       onlyRejectBuyOffers = false
     } catch (error) {
       assertError({
@@ -451,7 +452,7 @@ describe('Escrow', async function () {
 
     let onlyRejectPendingBuyOffers = true
     try {
-      await contracts.escrow.rejctbuyoffr(2, { authorization: `${firstuser}@active` })
+      await contracts.escrow.rejctbuyoffr(2, hyperionMemo, { authorization: `${firstuser}@active` })
       onlyRejectPendingBuyOffers = false
     } catch (error) {
       assertError({
@@ -485,17 +486,17 @@ describe('Escrow', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
     console.log('create sell offer')
-    await contracts.escrow.addselloffer(seconduser, '1200.0000 SEEDS', 11000, { authorization: `${seconduser}@active` })
-    await contracts.escrow.addselloffer(firstuser, '500.0000 SEEDS', 10000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(seconduser, '1200.0000 SEEDS', 11000, hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '500.0000 SEEDS', 10000, hyperionMemo, { authorization: `${firstuser}@active` })
 
     console.log('Add buy offers')
-    await contracts.escrow.addbuyoffer(thirduser, 0, '400.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
-    await contracts.escrow.addbuyoffer(firstuser, 0, '200.0000 SEEDS', 'paypal', { authorization: `${firstuser}@active` })
-    await contracts.escrow.addbuyoffer(seconduser, 1, '450.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
+    await contracts.escrow.addbuyoffer(thirduser, 0, '400.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
+    await contracts.escrow.addbuyoffer(firstuser, 0, '200.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 1, '450.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
 
     console.log('Cancel sell offer id 0')
 
-    await contracts.escrow.cancelsoffer(0, { authorization: `${seconduser}@active` })
+    await contracts.escrow.cancelsoffer(0, hyperionMemo, { authorization: `${seconduser}@active` })
 
     const sellOffers = await rpc.get_table_rows({
       code: escrow,
@@ -605,14 +606,14 @@ describe('Escrow', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
     await seeds.token.transfer(seconduser, escrow, '1000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
-    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
-    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(1, hyperionMemo, { authorization: `${seconduser}@active` })
     console.log('paid')
 
     try {
-      await contracts.escrow.initarbitrage(1, { authorization: `${escrow}@active` })
+      await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${escrow}@active` })
     } catch (error) {
       assertError({
         error,
@@ -624,7 +625,7 @@ describe('Escrow', async function () {
 
     let onlyAfter24h = true
     try {
-      await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+      await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${firstuser}@active` })
       onlyAfter24h = false
     } catch (error) {
       assertError({
@@ -640,10 +641,10 @@ describe('Escrow', async function () {
     console.timeLog('sleep')
 
     await setParamsValue(true)
-    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     try {
-      await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+      await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${firstuser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -699,10 +700,10 @@ describe('Escrow', async function () {
     await seeds.token.transfer(seconduser, escrow, '1000.0000 SEEDS', '', { authorization: `${seconduser}@active` })
 
     console.log('add, accept and pay offers')
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
-    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
-    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(1, hyperionMemo, { authorization: `${seconduser}@active` })
 
     console.time('sleep2')
     await sleep(2000)
@@ -710,10 +711,10 @@ describe('Escrow', async function () {
 
     console.log('create arbitrage')
     await setParamsValue(true)
-    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     try {
-      await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+      await contracts.escrow.arbtrgeoffer(thirduser, 1, hyperionMemo, { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -727,7 +728,7 @@ describe('Escrow', async function () {
     await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
 
     try {
-      await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${seconduser}@active` })
+      await contracts.escrow.arbtrgeoffer(thirduser, 1, hyperionMemo, { authorization: `${seconduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -737,7 +738,7 @@ describe('Escrow', async function () {
       })
     }
 
-    await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+    await contracts.escrow.arbtrgeoffer(thirduser, 1, hyperionMemo, { authorization: `${thirduser}@active` })
 
     const arbitoffs = await rpc.get_table_rows({
       code: escrow,
@@ -790,19 +791,19 @@ describe('Escrow', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
     console.log('add, accept and pay offers')
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
 
-    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
-    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
 
-    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
-    await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+    await contracts.escrow.accptbuyoffr(1, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.accptbuyoffr(2, hyperionMemo, { authorization: `${firstuser}@active` })
 
     // await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
-    await contracts.escrow.payoffer(2, { authorization: `${thirduser}@active` })
+    await contracts.escrow.payoffer(2, hyperionMemo, { authorization: `${thirduser}@active` })
 
     try {
-      await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvesellr(1, "", hyperionMemo, { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -818,10 +819,10 @@ describe('Escrow', async function () {
 
     console.log('create arbitrage')
     await setParamsValue(true)
-    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     try {
-      await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvesellr(1, "", hyperionMemo, { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -835,7 +836,7 @@ describe('Escrow', async function () {
     await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
 
     console.log('add arbiter to arbitrage')
-    await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+    await contracts.escrow.arbtrgeoffer(thirduser, 1, hyperionMemo, { authorization: `${thirduser}@active` })
 
     const offersB = await rpc.get_table_rows({
       code: escrow,
@@ -883,7 +884,7 @@ describe('Escrow', async function () {
       "escrow_balance": "1000.0000 SEEDS"
     })
 
-    await contracts.escrow.resolvesellr(1, "Resolved to seller", { authorization: `${thirduser}@active` })
+    await contracts.escrow.resolvesellr(1, "Resolved to seller", hyperionMemo, { authorization: `${thirduser}@active` })
 
     const arbitoffs = await rpc.get_table_rows({
       code: escrow,
@@ -928,7 +929,7 @@ describe('Escrow', async function () {
       "escrow_balance": "500.0000 SEEDS"
     })
     
-    await contracts.escrow.confrmpaymnt(2, { authorization: `${firstuser}@active` })
+    await contracts.escrow.confrmpaymnt(2, hyperionMemo, { authorization: `${firstuser}@active` })
 
     const balancesAf = await rpc.get_table_rows({
       code: escrow,
@@ -973,19 +974,19 @@ describe('Escrow', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
     console.log('add, accept and pay offers')
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
     
-    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
-    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
     
-    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
-    await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+    await contracts.escrow.accptbuyoffr(1, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.accptbuyoffr(2, hyperionMemo, { authorization: `${firstuser}@active` })
 
-    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
-    await contracts.escrow.payoffer(2, { authorization: `${thirduser}@active` })
+    await contracts.escrow.payoffer(1, hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.payoffer(2, hyperionMemo, { authorization: `${thirduser}@active` })
 
     try {
-      await contracts.escrow.resolvebuyer(1, "", { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvebuyer(1, "", hyperionMemo, { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -1001,10 +1002,10 @@ describe('Escrow', async function () {
 
     console.log('create arbitrage')
     await setParamsValue(true)
-    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     try {
-      await contracts.escrow.resolvebuyer(1, "", { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvebuyer(1, "", hyperionMemo, { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -1018,11 +1019,11 @@ describe('Escrow', async function () {
     await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
 
     console.log('add arbiter to arbitrage')
-    await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+    await contracts.escrow.arbtrgeoffer(thirduser, 1, hyperionMemo, { authorization: `${thirduser}@active` })
 
     const firstuserBalanceBefore = await getAccountBalance(seedsContracts.token, seconduser, seedsSymbol)
 
-    await contracts.escrow.confrmpaymnt(2, { authorization: `${firstuser}@active` })
+    await contracts.escrow.confrmpaymnt(2, hyperionMemo, { authorization: `${firstuser}@active` })
     
     const offers = await rpc.get_table_rows({
       code: escrow,
@@ -1035,7 +1036,7 @@ describe('Escrow', async function () {
     let currSellOff = offers.rows.find(el => el.id === 0)
     assert.deepStrictEqual(currSellOff.current_status, 's.soldout')
 
-    await contracts.escrow.resolvebuyer(1, "Resolved to buyer", { authorization: `${thirduser}@active` })
+    await contracts.escrow.resolvebuyer(1, "Resolved to buyer", hyperionMemo, { authorization: `${thirduser}@active` })
 
     const offersAf = await rpc.get_table_rows({
       code: escrow,
@@ -1138,13 +1139,13 @@ describe('Escrow', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
     console.log('add, accept and pay offers')
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
-    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
-    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(1, hyperionMemo, { authorization: `${seconduser}@active` })
 
     try {
-      await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvesellr(1, "", hyperionMemo, { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -1160,10 +1161,10 @@ describe('Escrow', async function () {
 
     console.log('create arbitrage')
     await setParamsValue(true)
-    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     try {
-      await contracts.escrow.resolvesellr(1, "", { authorization: `${thirduser}@active` })
+      await contracts.escrow.resolvesellr(1, "", hyperionMemo, { authorization: `${thirduser}@active` })
     } catch (error) {
       assertError({
         error,
@@ -1177,7 +1178,7 @@ describe('Escrow', async function () {
     await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
 
     console.log('add arbiter to arbitrage')
-    await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+    await contracts.escrow.arbtrgeoffer(thirduser, 1, hyperionMemo, { authorization: `${thirduser}@active` })
 
     const offersB = await rpc.get_table_rows({
       code: escrow,
@@ -1192,7 +1193,7 @@ describe('Escrow', async function () {
     let availabeBefore = currSellOffBefore.quantity_info.find(el => el.key === 'available').value
     let totalOfferedBefore = currSellOffBefore.quantity_info.find(el => el.key === 'totaloffered').value
 
-    await contracts.escrow.resolvesellr(1, "Resolved to seller", { authorization: `${thirduser}@active` })
+    await contracts.escrow.resolvesellr(1, "Resolved to seller", hyperionMemo, { authorization: `${thirduser}@active` })
 
     const arbitoffs = await rpc.get_table_rows({
       code: escrow,
@@ -1264,12 +1265,12 @@ describe('Escrow', async function () {
     await seeds.token.transfer(firstuser, escrow, '2000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
     console.log('add, accept and pay offers')
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
 
-    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
-    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', { authorization: `${thirduser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '500.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.addbuyoffer(thirduser, 0, '500.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${thirduser}@active` })
 
-    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.accptbuyoffr(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     console.log('Confirm to sell half of offered seeds')
     const offersTable1 = await rpc.get_table_rows({
@@ -1282,7 +1283,7 @@ describe('Escrow', async function () {
 
     assert.deepStrictEqual(offersTable1.rows[0].current_status, 's.active')
 
-    await contracts.escrow.accptbuyoffr(2, { authorization: `${firstuser}@active` })
+    await contracts.escrow.accptbuyoffr(2, hyperionMemo, { authorization: `${firstuser}@active` })
 
     console.log('Confirm to sell half of offered seeds')
     const offersTable2 = await rpc.get_table_rows({
@@ -1295,8 +1296,8 @@ describe('Escrow', async function () {
 
     assert.deepStrictEqual(offersTable2.rows[0].current_status, 's.soldout')
 
-    await contracts.escrow.payoffer(1, { authorization: `${seconduser}@active` })
-    await contracts.escrow.confrmpaymnt(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(1, hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.confrmpaymnt(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     const offersTable = await rpc.get_table_rows({
       code: escrow,
@@ -1308,8 +1309,8 @@ describe('Escrow', async function () {
 
     assert.deepStrictEqual(offersTable.rows[0].current_status, 's.soldout')
 
-    await contracts.escrow.payoffer(2, { authorization: `${thirduser}@active` })
-    await contracts.escrow.confrmpaymnt(2, { authorization: `${firstuser}@active` })
+    await contracts.escrow.payoffer(2, hyperionMemo, { authorization: `${thirduser}@active` })
+    await contracts.escrow.confrmpaymnt(2, hyperionMemo, { authorization: `${firstuser}@active` })
 
     const offersTable3 = await rpc.get_table_rows({
       code: escrow,
@@ -1341,30 +1342,30 @@ describe('Escrow', async function () {
     await seeds.token.transfer(firstuser, escrow, '1000.0000 SEEDS', '', { authorization: `${firstuser}@active` })
 
     console.log('add, accept and pay offers')
-    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, { authorization: `${firstuser}@active` })
-    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', { authorization: `${seconduser}@active` })
-    await contracts.escrow.accptbuyoffr(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addselloffer(firstuser, '1000.0000 SEEDS', 11000, hyperionMemo, { authorization: `${firstuser}@active` })
+    await contracts.escrow.addbuyoffer(seconduser, 0, '1000.0000 SEEDS', 'paypal', hyperionMemo, { authorization: `${seconduser}@active` })
+    await contracts.escrow.accptbuyoffr(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     console.log('Buyer don\'t confirm pay so seller init arbitrage')
-    await contracts.escrow.initarbitrage(1, { authorization: `${firstuser}@active` })
+    await contracts.escrow.initarbitrage(1, hyperionMemo, { authorization: `${firstuser}@active` })
 
     console.log('create arbiter')
     await contracts.escrow.addarbiter(thirduser, { authorization: `${escrow}@active` })
 
     try {
-      await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', { authorization: `${firstuser}@active` })
+      await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', hyperionMemo, { authorization: `${firstuser}@active` })
     } catch (error) {
       assert.deepStrictEqual(error.message, 'assertion failure with message: Offer has not arbiter yet')
     }
 
     console.log('add arbiter to arbitrage')
-    await contracts.escrow.arbtrgeoffer(thirduser, 1, { authorization: `${thirduser}@active` })
+    await contracts.escrow.arbtrgeoffer(thirduser, 1, hyperionMemo, { authorization: `${thirduser}@active` })
 
     console.log('seller send contact methods')
-    await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', { authorization: `${firstuser}@active` })
+    await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', hyperionMemo, { authorization: `${firstuser}@active` })
 
     console.log('buyer send contact methods')
-    await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', { authorization: `${seconduser}@active` })
+    await contracts.escrow.sendconmethd(1, '4251f90f2a58a4cf78bf70f95e4f772f', 'PUB_K1_6utVJ2S4zHZCiJvTxDhRVUst5RM5zB8foUaCEqEw34dz9wFh5v', '69e4210d9a46daf32bb01bd999770d23f5953b030ea53c93dd7e8f881907d57d', 'a350ac97f1d22e7cb2abaa4ab47a626768d0835e5aa2f6a7ed140bcd46d50165', hyperionMemo, { authorization: `${seconduser}@active` })
 
     const arbitragesTable = await rpc.get_table_rows({
       code: escrow,

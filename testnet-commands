@@ -1,0 +1,9 @@
+
+==========================================================
+SEEDS ISSUANCE
+
+./cleos -u https://testnet.telos.caleos.io push action token.seeds issue '["seeds", "100000.0000 SEEDS", "test"]' -p seeds@active
+
+./cleos -u https://testnet.telos.caleos.io push action token.seeds transfer '["seeds", "ihasnocpunet", "100000.0000 SEEDS", "test"]' -p seeds@active
+
+

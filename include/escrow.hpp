@@ -30,45 +30,45 @@ CONTRACT escrow : public contract {
 
     ACTION deposit(const name & from, const name & to, const asset & quantity, const std::string & memo);
 
-    ACTION withdraw(const name & account, const asset & quantity);
+    ACTION withdraw(const name & account, const asset & quantity, const std::string & memo);
 
-    ACTION upsertuser(const name & account, const mapss & contact_methods, const mapss & payment_methods, const name & time_zone, const name & fiat_currency);
+    ACTION upsertuser(const name & account, const mapss & contact_methods, const mapss & payment_methods, const name & time_zone, const name & fiat_currency, const std::string & memo);
 
-    ACTION addselloffer(const name & seller, const asset & total_offered, const uint64_t & price_percentage);
+    ACTION addselloffer(const name & seller, const asset & total_offered, const uint64_t & price_percentage, const std::string & memo);
 
-    ACTION cancelsoffer(const uint64_t & sell_offer_id);
+    ACTION cancelsoffer(const uint64_t & sell_offer_id, const std::string & memo);
 
-    ACTION addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, const asset & quantity, const std::string & payment_method);
+    ACTION addbuyoffer(const name & buyer, const uint64_t & sell_offer_id, const asset & quantity, const std::string & payment_method, const std::string & memo);
 
-    ACTION delbuyoffer(const uint64_t & buy_offer_id);
+    ACTION delbuyoffer(const uint64_t & buy_offer_id, const std::string & memo);
 
-    ACTION accptbuyoffr(const uint64_t & buy_offer_id);
+    ACTION accptbuyoffr(const uint64_t & buy_offer_id, const std::string & memo);
 
-    ACTION rejctbuyoffr(const uint64_t & buy_offer_id);
+    ACTION rejctbuyoffr(const uint64_t & buy_offer_id, const std::string & memo);
 
-    ACTION payoffer(const uint64_t & buy_offer_id);
+    ACTION payoffer(const uint64_t & buy_offer_id, const std::string & memo);
 
-    ACTION confrmpaymnt(const uint64_t & buy_offer_id);
+    ACTION confrmpaymnt(const uint64_t & buy_offer_id, const std::string & memo);
 
     ACTION addarbiter(const name & account);
 
     ACTION delarbiter(const name & account);
 
-    ACTION initarbitrage(const uint64_t & buy_offer_id);
+    ACTION initarbitrage(const uint64_t & buy_offer_id, const std::string & memo);
 
-    ACTION arbtrgeoffer(const name & arbiter, const uint64_t & offer_id);
+    ACTION arbtrgeoffer(const name & arbiter, const uint64_t & offer_id, const std::string & memo);
 
-    ACTION resolvesellr(const uint64_t & offer_id, const string & notes);
+    ACTION resolvesellr(const uint64_t & offer_id, const string & notes, const std::string & memo);
 
-    ACTION resolvebuyer(const uint64_t & offer_id, const string & notes);
+    ACTION resolvebuyer(const uint64_t & offer_id, const string & notes, const std::string & memo);
 
-    ACTION addoffermsg(const uint64_t & buy_offer_id, const string & iv, const string & ephem_key, const string & message, const checksum256 & mac);
+    ACTION addoffermsg(const uint64_t & buy_offer_id, const string & iv, const string & ephem_key, const string & message, const checksum256 & mac, const std::string & memo);
 
-    ACTION delprivtemsg(const uint64_t & message_id);
+    ACTION delprivtemsg(const uint64_t & message_id, const std::string & memo);
 
-    ACTION addpublickey(const name & account, const string & public_key);
+    ACTION addpublickey(const name & account, const string & public_key, const std::string & memo);
 
-    ACTION sendconmethd(const uint64_t & buy_offer_id, const string & iv, const string & ephem_key, const string & message, const checksum256 & mac);
+    ACTION sendconmethd(const uint64_t & buy_offer_id, const string & iv, const string & ephem_key, const string & message, const checksum256 & mac, const std::string & memo);
 
   private:
 
